@@ -170,6 +170,10 @@ cmd_list() {
 
 cmd_status() {
   if [ -f "$BRANDING_FILE" ]; then
+    if cmp -s "$BRANDING_FILE" "$DEFAULT_LOGO"; then
+      echo "Active screensaver: Default Omarchy logo ($DEFAULT_LOGO)"
+      return
+    fi
     echo "Active screensaver: Custom branding"
     echo "File: $BRANDING_FILE"
     echo "--- Preview ---"
