@@ -45,8 +45,10 @@ Panel {
   function applyCustomText() {
     var txt = inputText.trim().slice(0, 7)
     if (!txt) return
+    root.dynamicMode = "off"
+    root.previewText = Model.generateAscii(txt)
     if (root.bar) {
-      root.bar.run("omasaver set " + Commons.Util.shellQuote(txt))
+      root.bar.run("omasaver dynamic stop ; omasaver set " + Commons.Util.shellQuote(txt))
       Qt.callLater(function() { brandingFile.reload() })
     }
   }
@@ -79,12 +81,47 @@ Panel {
   }
 
   FileView {
+    id: hostnameFile
+    path: "/etc/hostname"
+    printErrors: false
+  }
+
+  function getHostname() {
+    var raw = (hostnameFile.text() || "").trim().split(".")[0].toUpperCase()
+    return raw.slice(0, 7) || "HOST"
+  }
+
+  Timer {
+    id: clockTimer
+    interval: 5000
+    repeat: true
+    running: root.dynamicMode === "clock" && root.opened
+    onTriggered: {
+      var t = new Date()
+      var h = String(t.getHours()).padStart(2, "0")
+      var m = String(t.getMinutes()).padStart(2, "0")
+      var timeStr = h + ":" + m
+      root.inputText = timeStr
+      root.previewText = Model.generateAscii(timeStr)
+    }
+  }
+
+  FileView {
     id: brandingFile
     path: Quickshell.env("HOME") + "/.config/omarchy/branding/screensaver.txt"
     watchChanges: true
     printErrors: false
     onLoaded: {
       root.isCustomActive = true
+      if (text()) {
+        root.previewText = text()
+      }
+    }
+    onFileChanged: {
+      reload()
+      if (text()) {
+        root.previewText = text()
+      }
     }
     onLoadFailed: {
       root.isCustomActive = false
@@ -220,19 +257,20 @@ Panel {
               text: "🕐 Clock"
               width: (parent.width - Style.space(24)) / 4
               bordered: true
-              accent: root.dynamicMode === "clock" ? Commons.Color.accent : undefined
+              selected: root.dynamicMode === "clock"
+              accent: Commons.Color.accent
               tooltipText: "Live clock (updates every minute)"
               onClicked: {
                 root.dynamicMode = "clock"
+                var t = new Date()
+                var h = String(t.getHours()).padStart(2, "0")
+                var m = String(t.getMinutes()).padStart(2, "0")
+                var timeStr = h + ":" + m
+                root.inputText = timeStr
+                root.previewText = Model.generateAscii(timeStr)
                 if (root.bar) {
                   root.bar.run("omasaver dynamic clock")
-                  Qt.callLater(function() {
-                    brandingFile.reload()
-                    var t = new Date()
-                    var h = String(t.getHours()).padStart(2, "0")
-                    var m = String(t.getMinutes()).padStart(2, "0")
-                    root.previewText = Model.generateAscii(h + ":" + m)
-                  })
+                  Qt.callLater(function() { brandingFile.reload() })
                 }
               }
             }
@@ -241,10 +279,14 @@ Panel {
               text: "👤 User"
               width: (parent.width - Style.space(24)) / 4
               bordered: true
-              accent: root.dynamicMode === "user" ? Commons.Color.accent : undefined
+              selected: root.dynamicMode === "user"
+              accent: Commons.Color.accent
               tooltipText: "Display system username"
               onClicked: {
                 root.dynamicMode = "user"
+                var uname = (Quickshell.env("USER") || "").trim().toUpperCase().slice(0, 7) || "USER"
+                root.inputText = uname
+                root.previewText = Model.generateAscii(uname)
                 if (root.bar) {
                   root.bar.run("omasaver dynamic stop ; omasaver dynamic user")
                   Qt.callLater(function() { brandingFile.reload() })
@@ -256,10 +298,14 @@ Panel {
               text: "🖥 Host"
               width: (parent.width - Style.space(24)) / 4
               bordered: true
-              accent: root.dynamicMode === "host" ? Commons.Color.accent : undefined
+              selected: root.dynamicMode === "host"
+              accent: Commons.Color.accent
               tooltipText: "Display system hostname"
               onClicked: {
                 root.dynamicMode = "host"
+                var h = root.getHostname()
+                root.inputText = h
+                root.previewText = Model.generateAscii(h)
                 if (root.bar) {
                   root.bar.run("omasaver dynamic stop ; omasaver dynamic host")
                   Qt.callLater(function() { brandingFile.reload() })
@@ -271,6 +317,7 @@ Panel {
               text: "✕ Stop"
               width: (parent.width - Style.space(24)) / 4
               bordered: true
+              selected: root.dynamicMode === "off"
               tooltipText: "Stop live dynamic mode"
               onClicked: {
                 root.dynamicMode = "off"
@@ -285,9 +332,9 @@ Panel {
           Text {
             visible: root.dynamicMode !== "off"
             text: {
-              if (root.dynamicMode === "clock") return "● Live Clock active — screensaver updates every minute"
-              if (root.dynamicMode === "user")  return "● Username mode active"
-              if (root.dynamicMode === "host")  return "● Hostname mode active"
+              if (root.dynamicMode === "clock") return "● Live Clock active — screensaver updates every minute (" + root.inputText + ")"
+              if (root.dynamicMode === "user")  return "● Username mode active (" + root.inputText + ")"
+              if (root.dynamicMode === "host")  return "● Hostname mode active (" + root.inputText + ")"
               return ""
             }
             color: Commons.Color.accent
