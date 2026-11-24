@@ -482,17 +482,7 @@ GLYPHS = {
 }
 
 
-def get_adaptive_gap(txt, target_width=80):
-    if len(txt) <= 1:
-        return 2
-    w_letters = sum(15 if c in "MW" else 9 for c in txt)
-    gaps = len(txt) - 1
-    raw = (target_width - w_letters) / gaps
-    gap = round(raw)
-    return max(2, min(12, gap))
-
-gap = get_adaptive_gap(text, 80)
-sep = " " * gap
+sep = "  " # Exact 2 spaces uniform kerning (matching official Omarchy logo)
 lines = [""] * 8
 
 for ch in text:
@@ -504,7 +494,7 @@ with open(out_file, "w", encoding="utf-8") as f:
     for line in lines:
         f.write(line.rstrip() + "\n")
 
-print(f"✓ Generated Omarchy signature screensaver text for '{text}' ({len(text)} letters, adaptive gap: {gap} spaces, width: {len(lines[0].rstrip())} cols)")
+print(f"✓ Generated Omarchy signature screensaver text for '{text}' ({len(text)} letters, exact 2-space Omarchy kerning)")
 print(f"✓ Saved to {out_file}")
 PYEOF
 }
@@ -539,12 +529,17 @@ cmd_test() {
     win_width=100
   fi
 
-  echo "Testing screensaver effect: '$effect' (matching default Omarchy timing at 120 FPS)..."
+  local foot_cfg_arg=""
+  if [ -f "/usr/share/omarchy/default/foot/screensaver.ini" ]; then
+    foot_cfg_arg="--config=/usr/share/omarchy/default/foot/screensaver.ini"
+  fi
+
+  echo "Testing screensaver effect: '$effect' (matching default Omarchy font size 18 & 120 FPS)..."
 
   local test_script="stty -echo 2>/dev/null; printf \"\\033]11;rgb:00/00/00\\007\"; printf \"\\033[?25l\"; cleanup() { printf \"\\033[?25h\"; exit 0; }; trap cleanup SIGINT SIGTERM EXIT; while true; do ttfx -i \"$target_file\" --frame-rate 120 --canvas-width 0 --canvas-height 0 --reuse-canvas --anchor-canvas c --anchor-text c $effect_flag --no-eol --no-restore-cursor & pid=\\$!; while kill -0 \\$pid 2>/dev/null; do if read -n1 -t 0.2; then kill \\$pid 2>/dev/null; cleanup; fi; done; done"
 
   if command -v hyprctl >/dev/null 2>&1 && [ -n "${HYPRLAND_INSTANCE_SIGNATURE:-}" ]; then
-    hyprctl dispatch "hl.dsp.exec_cmd('foot --app-id=TUI.float -W ${win_width}x26 bash -c \"'\"$test_script\"'\" ')" >/dev/null 2>&1 ||       bash -c "$test_script"
+    hyprctl dispatch "hl.dsp.exec_cmd('foot --app-id=TUI.float $foot_cfg_arg -W ${win_width}x26 bash -c \"'\"$test_script\"'\" ')" >/dev/null 2>&1 ||       bash -c "$test_script"
   else
     bash -c "$test_script"
   fi
