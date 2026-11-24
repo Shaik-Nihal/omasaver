@@ -74,23 +74,34 @@ Omasaver runs on **Omarchy Linux** and depends on the following packages that sh
 
 ## Installation
 
-### Via Omarchy Plugin Store (Recommended — Zero Setup)
+### One-Command Install (Recommended)
 
-Install directly from the Omarchy Plugin Store / Manager. **No manual setup required**!
-The plugin is completely self-contained: `Panel.qml` and `BarWidget.qml` automatically locate and run `bin/omasaver` directly from the plugin directory, and auto-symlink it to `~/.local/bin/omasaver` on launch so the CLI is immediately available in your terminal.
+You can install and enable Omasaver directly using Omarchy's built-in plugin manager:
 
 ```bash
-# Simply install/enable nihal.omasaver in Omarchy Plugin Manager, or reload the shell:
-/usr/share/omarchy/bin/omarchy-restart-shell
+omarchy plugin add https://github.com/Shaik-Nihal/omasaver.git --enable
 ```
 
-After the shell restarts, the **󱄄** icon appears in the top bar.
+**That's it!** Omarchy will automatically:
+1. Clone the repository into `~/.config/omarchy/plugins/nihal.omasaver`.
+2. Validate the manifest schema.
+3. Activate the **󱄄** widget in your top bar.
+4. Auto-symlink `omasaver` to `~/.local/bin/omasaver` on launch so the CLI is immediately available in your terminal.
 
 ---
 
-### Manual / Git Install
+### Via Omarchy Plugin Store UI
 
-If cloning manually from GitHub:
+Once listed in the Omarchy Community Catalog, you can also install it directly with a single click:
+1. Open the Omarchy Menu (`Super` or click the menu button).
+2. Navigate to **Plugins** → **Install Plugins**.
+3. Select **Omasaver** (`nihal.omasaver`) and click **Enable**.
+
+---
+
+### Manual / Git Clone
+
+If you prefer to clone manually from GitHub:
 
 ```bash
 # 1. Clone into your Omarchy plugins directory
@@ -100,7 +111,7 @@ git clone https://github.com/Shaik-Nihal/omasaver.git ~/.config/omarchy/plugins/
 /usr/share/omarchy/bin/omarchy-restart-shell
 ```
 
-The plugin will automatically detect its location and symlink `bin/omasaver` to `~/.local/bin/omasaver` on first run. If you prefer to manually symlink it yourself:
+The plugin will automatically detect its directory and symlink `bin/omasaver` to `~/.local/bin/omasaver` on first run. If you wish to manually link it yourself:
 
 ```bash
 mkdir -p ~/.local/bin
@@ -111,7 +122,22 @@ ln -sf ~/.config/omarchy/plugins/nihal.omasaver/bin/omasaver ~/.local/bin/omasav
 
 ## Uninstallation
 
-### Remove Everything (Plugin + CLI)
+### One-Command Removal (Recommended)
+
+```bash
+omarchy plugin remove nihal.omasaver
+```
+
+To also remove the terminal CLI symlink and custom screensaver text:
+
+```bash
+rm -f ~/.local/bin/omasaver
+rm -f ~/.config/omarchy/branding/screensaver.txt
+```
+
+---
+
+### Manual Removal
 
 ```bash
 # 1. Remove the shell plugin
