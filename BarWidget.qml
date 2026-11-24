@@ -64,7 +64,13 @@ BarWidget {
     onPressed: function(buttonCode) {
       if (buttonCode === Qt.LeftButton) root.toggle()
       else if (buttonCode === Qt.RightButton) {
-        if (root.bar) root.bar.run("omasaver run")
+        if (root.bar) {
+          var home = Quickshell.env("HOME")
+          var pluginBin = home + "/.config/omarchy/plugins/nihal.omasaver/bin/omasaver"
+          var localBin = home + "/.local/bin/omasaver"
+          var binCmd = "([ -x " + localBin + " ] && " + localBin + " || [ -x " + pluginBin + " ] && " + pluginBin + " || omasaver)"
+          root.bar.run(binCmd + " run")
+        }
       }
     }
   }

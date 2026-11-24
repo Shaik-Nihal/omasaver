@@ -1,5 +1,6 @@
 // 8-Row Omarchy Signature Typography Engine
-// Exact 9-column uniform grid (15-col for M/W) directly derived from official Omarchy logo.txt.
+// Copyright (c) 2026 Shaik Nihal. Portions Copyright (c) 2024-2026 David Heinemeier Hansson.
+// Exact 9-column uniform grid (15-col for M/W) derived from official Omarchy logo.txt under the MIT License.
 // 2-space uniform kerning across all glyphs.
 
 var GLYPHS = {

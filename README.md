@@ -74,45 +74,37 @@ Omasaver runs on **Omarchy Linux** and depends on the following packages that sh
 
 ## Installation
 
-### Quick Install (Recommended)
+### Via Omarchy Plugin Store (Recommended — Zero Setup)
 
-Clone the repository and run the install steps:
+Install directly from the Omarchy Plugin Store / Manager. **No manual setup required**!
+The plugin is completely self-contained: `Panel.qml` and `BarWidget.qml` automatically locate and run `bin/omasaver` directly from the plugin directory, and auto-symlink it to `~/.local/bin/omasaver` on launch so the CLI is immediately available in your terminal.
 
 ```bash
-# 1. Clone the repository
-git clone https://github.com/Shaik-Nihal/omasaver.git ~/Downloads/omasaver
-
-# 2. Install the shell plugin
-mkdir -p ~/.config/omarchy/plugins/nihal.omasaver
-cp -r ~/Downloads/omasaver/{manifest.json,BarWidget.qml,Panel.qml,Model.js,assets,i18n} \
-  ~/.config/omarchy/plugins/nihal.omasaver/
-
-# 3. Install the CLI tool
-mkdir -p ~/.local/bin
-cp ~/Downloads/omasaver/bin/omasaver ~/.local/bin/omasaver
-chmod +x ~/.local/bin/omasaver
-
-# 4. Reload the Omarchy shell to activate the plugin
+# Simply install/enable nihal.omasaver in Omarchy Plugin Manager, or reload the shell:
 /usr/share/omarchy/bin/omarchy-restart-shell
 ```
 
 After the shell restarts, the **󱄄** icon appears in the top bar.
 
-### Manual Install
+---
 
-If you prefer to install just the CLI without the bar widget:
+### Manual / Git Install
+
+If cloning manually from GitHub:
+
+```bash
+# 1. Clone into your Omarchy plugins directory
+git clone https://github.com/Shaik-Nihal/omasaver.git ~/.config/omarchy/plugins/nihal.omasaver
+
+# 2. Reload the Omarchy shell to activate the plugin
+/usr/share/omarchy/bin/omarchy-restart-shell
+```
+
+The plugin will automatically detect its location and symlink `bin/omasaver` to `~/.local/bin/omasaver` on first run. If you prefer to manually symlink it yourself:
 
 ```bash
 mkdir -p ~/.local/bin
-cp bin/omasaver ~/.local/bin/omasaver
-chmod +x ~/.local/bin/omasaver
-```
-
-Make sure `~/.local/bin` is in your `PATH` (it is by default on Omarchy):
-
-```bash
-echo $PATH | tr ':' '\n' | grep local
-# Should show: /home/<user>/.local/bin
+ln -sf ~/.config/omarchy/plugins/nihal.omasaver/bin/omasaver ~/.local/bin/omasaver
 ```
 
 ---
@@ -241,7 +233,7 @@ omasaver test random
 
 ## Typography
 
-Omasaver uses Omarchy's official 8-row curved block typography, derived directly from `/usr/share/omarchy/logo.txt`:
+Omasaver uses Omarchy's official 8-row curved block typography, derived directly from `/usr/share/omarchy/logo.txt` (Copyright © 2024–2026 David Heinemeier Hansson, used under the MIT License):
 
 - **Glyph grid**: 9 columns × 8 rows for standard letters (A–Z except M and W)
 - **Wide glyphs**: M and W are 15 columns × 8 rows (3-pillar design)
@@ -362,4 +354,5 @@ After editing `Model.js` or `Panel.qml`, Quickshell caches imported modules. You
 
 ## License
 
-MIT License — Copyright (c) [Nihal](https://github.com/Shaik-Nihal)
+MIT License — Copyright (c) 2026 [Shaik Nihal](https://github.com/Shaik-Nihal)  
+Portions Copyright (c) 2024–2026 David Heinemeier Hansson (Omarchy original logo typography, used under the MIT License).

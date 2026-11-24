@@ -48,6 +48,24 @@ Panel {
     return false
   }
 
+  // Self-contained CLI resolver: looks in ~/.local/bin, plugin directory, or PATH
+  readonly property string omasaverBin: {
+    var home = Quickshell.env("HOME")
+    var pluginBin = home + "/.config/omarchy/plugins/nihal.omasaver/bin/omasaver"
+    var localBin = home + "/.local/bin/omasaver"
+    return "([ -x " + Commons.Util.shellQuote(localBin) + " ] && " + Commons.Util.shellQuote(localBin) + " || [ -x " + Commons.Util.shellQuote(pluginBin) + " ] && " + Commons.Util.shellQuote(pluginBin) + " || omasaver)"
+  }
+
+  Component.onCompleted: {
+    if (root.bar) {
+      // Auto-symlink omasaver to ~/.local/bin so the CLI is immediately available in terminal without manual setup
+      var home = Quickshell.env("HOME")
+      var pluginBin = home + "/.config/omarchy/plugins/nihal.omasaver/bin/omasaver"
+      var localBin = home + "/.local/bin/omasaver"
+      root.bar.run("mkdir -p ~/.local/bin && [ -x " + Commons.Util.shellQuote(pluginBin) + " ] && [ ! -e " + Commons.Util.shellQuote(localBin) + " ] && ln -sf " + Commons.Util.shellQuote(pluginBin) + " " + Commons.Util.shellQuote(localBin) + " 2>/dev/null || true")
+    }
+  }
+
   function applyCustomText() {
     var maxL = root.fontStyle === "compact" ? 14 : 7
     var txt = inputText.trim().slice(0, maxL)
@@ -55,7 +73,7 @@ Panel {
     root.dynamicMode = "off"
     root.updatePreview()
     if (root.bar) {
-      var cmd = "omasaver set " + Commons.Util.shellQuote(txt) + " --font " + Commons.Util.shellQuote(root.fontStyle)
+      var cmd = root.omasaverBin + " set " + Commons.Util.shellQuote(txt) + " --font " + Commons.Util.shellQuote(root.fontStyle)
       if (root.subtitleText.trim().length > 0) {
         cmd += " --subtitle " + Commons.Util.shellQuote(root.subtitleText.trim())
       }
@@ -70,7 +88,7 @@ Panel {
     root.inputText = "OMARCHY"
     root.updatePreview()
     if (root.bar) {
-      root.bar.run("omasaver reset")
+      root.bar.run(root.omasaverBin + " reset")
     }
   }
 
@@ -79,21 +97,21 @@ Panel {
     var maxL = root.fontStyle === "compact" ? 14 : 7
     var txt = inputText.trim().slice(0, maxL)
     if (txt && root.bar) {
-      var cmd = "omasaver set " + Commons.Util.shellQuote(txt) + " --font " + Commons.Util.shellQuote(root.fontStyle)
+      var cmd = root.omasaverBin + " set " + Commons.Util.shellQuote(txt) + " --font " + Commons.Util.shellQuote(root.fontStyle)
       if (root.subtitleText.trim().length > 0) {
         cmd += " --subtitle " + Commons.Util.shellQuote(root.subtitleText.trim())
       }
-      cmd += " && omasaver test " + Commons.Util.shellQuote(currentEffect)
+      cmd += " && " + root.omasaverBin + " test " + Commons.Util.shellQuote(currentEffect)
       root.bar.run(cmd)
     } else if (root.bar) {
-      root.bar.run("omasaver test " + Commons.Util.shellQuote(currentEffect))
+      root.bar.run(root.omasaverBin + " test " + Commons.Util.shellQuote(currentEffect))
     }
   }
 
   function launchScreensaver() {
     root.close()
     if (root.bar) {
-      root.bar.run("omasaver run")
+      root.bar.run(root.omasaverBin + " run")
     }
   }
 
@@ -373,7 +391,7 @@ Panel {
                 root.inputText = timeStr
                 root.updatePreview()
                 if (root.bar) {
-                  root.bar.run("omasaver dynamic clock")
+                  root.bar.run(root.omasaverBin + " dynamic clock")
                 }
               }
             }
@@ -391,7 +409,7 @@ Panel {
                 root.inputText = uname
                 root.updatePreview()
                 if (root.bar) {
-                  root.bar.run("omasaver dynamic user")
+                  root.bar.run(root.omasaverBin + " dynamic user")
                 }
               }
             }
@@ -409,7 +427,7 @@ Panel {
                 root.inputText = h
                 root.updatePreview()
                 if (root.bar) {
-                  root.bar.run("omasaver dynamic host")
+                  root.bar.run(root.omasaverBin + " dynamic host")
                 }
               }
             }
@@ -423,7 +441,7 @@ Panel {
               onClicked: {
                 root.dynamicMode = "off"
                 if (root.bar) {
-                  root.bar.run("omasaver dynamic stop")
+                  root.bar.run(root.omasaverBin + " dynamic stop")
                 }
               }
             }
