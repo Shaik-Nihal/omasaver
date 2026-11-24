@@ -405,11 +405,31 @@ var GLYPHS = {
   ]
 };
 
-var sep = "  "; // Exactly 2 spaces uniform kerning (matching official Omarchy logo)
+function makeSpaces(count) {
+  var s = "";
+  for (var i = 0; i < count; i++) s += " ";
+  return s;
+}
+
+function getAdaptiveGap(text, targetWidth) {
+  if (!text || text.length <= 1) return 2;
+  var target = targetWidth || 80;
+  var wLetters = 0;
+  for (var i = 0; i < text.length; i++) {
+    var c = text.charAt(i);
+    wLetters += (c === "M" || c === "W") ? 15 : 9;
+  }
+  var gaps = text.length - 1;
+  var raw = (target - wLetters) / gaps;
+  var gap = Math.round(raw);
+  return Math.max(2, Math.min(12, gap));
+}
 
 function generateAscii(text) {
   if (!text || text.length === 0) return "";
   var clean = text.toUpperCase().trim().slice(0, 7);
+  var gap = getAdaptiveGap(clean, 80);
+  var sep = makeSpaces(gap);
   var lines = ["", "", "", "", "", "", "", ""];
 
   for (var i = 0; i < clean.length; i++) {

@@ -482,7 +482,17 @@ GLYPHS = {
 }
 
 
-sep = "  " # 2 spaces balanced kerning for all word lengths
+def get_adaptive_gap(txt, target_width=80):
+    if len(txt) <= 1:
+        return 2
+    w_letters = sum(15 if c in "MW" else 9 for c in txt)
+    gaps = len(txt) - 1
+    raw = (target_width - w_letters) / gaps
+    gap = round(raw)
+    return max(2, min(12, gap))
+
+gap = get_adaptive_gap(text, 80)
+sep = " " * gap
 lines = [""] * 8
 
 for ch in text:
@@ -494,7 +504,7 @@ with open(out_file, "w", encoding="utf-8") as f:
     for line in lines:
         f.write(line.rstrip() + "\n")
 
-print(f"✓ Generated Omarchy signature screensaver text for '{text}'")
+print(f"✓ Generated Omarchy signature screensaver text for '{text}' ({len(text)} letters, adaptive gap: {gap} spaces, width: {len(lines[0].rstrip())} cols)")
 print(f"✓ Saved to {out_file}")
 PYEOF
 }
