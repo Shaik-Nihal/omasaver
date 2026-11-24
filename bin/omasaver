@@ -57,16 +57,25 @@ HELP
 cmd_set() {
   local text="${1:-}"
   if [ -z "$text" ]; then
-    echo "Error: Please provide text to set, e.g.: omasaver set \"NIHAL\"" >&2
+    echo "Error: Please provide text to set (1-7 characters), e.g.: omasaver set \"NIHAL\"" >&2
     exit 1
+  fi
+
+  local clean
+  clean=$(echo "$text" | tr '[:lower:]' '[:upper:]' | xargs)
+
+  if [ ${#clean} -gt 7 ]; then
+    echo "⚠ Notice: Limiting screensaver text to 7 characters for perfect terminal & screensaver boundaries."
+    echo "  Original: '$clean' (${#clean} chars) -> Using: '${clean:0:7}'"
+    clean="${clean:0:7}"
   fi
 
   mkdir -p "$BRANDING_DIR"
 
-  python3 - "$text" "$BRANDING_FILE" << 'PYEOF'
+  python3 - "$clean" "$BRANDING_FILE" << 'PYEOF'
 import sys, json
 
-text = sys.argv[1].upper()
+text = sys.argv[1].upper()[:7]
 out_file = sys.argv[2]
 
 GLYPHS = {
@@ -509,9 +518,9 @@ cmd_test() {
 
   local max_line_len
   max_line_len=$(awk '{ if (length > max) max = length } END { print (max ? max : 80) }' "$target_file")
-  local win_width=$(( max_line_len + 16 ))
-  if (( win_width < 110 )); then
-    win_width=110
+  local win_width=$(( max_line_len + 24 ))
+  if (( win_width < 112 )); then
+    win_width=112
   fi
 
   echo "Testing screensaver effect: '$effect' (window width: ${win_width})..."

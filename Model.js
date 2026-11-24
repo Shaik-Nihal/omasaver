@@ -408,7 +408,7 @@ var sep = "  "; // 2 spaces uniform balanced kerning for all words
 
 function generateAscii(text) {
   if (!text || text.length === 0) return "";
-  var clean = text.toUpperCase();
+  var clean = text.toUpperCase().trim().slice(0, 7);
   var lines = ["", "", "", "", "", "", "", ""];
 
   for (var i = 0; i < clean.length; i++) {

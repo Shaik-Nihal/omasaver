@@ -42,7 +42,7 @@ Panel {
   }
 
   function applyCustomText() {
-    var txt = inputText.trim()
+    var txt = inputText.trim().slice(0, 7)
     if (!txt) return
     if (root.bar) {
       root.bar.run("omasaver set " + Commons.Util.shellQuote(txt))
@@ -58,7 +58,11 @@ Panel {
   }
 
   function testDrive() {
-    if (root.bar) {
+    var txt = inputText.trim().slice(0, 7)
+    if (txt && root.bar) {
+      root.bar.run("omasaver set " + Commons.Util.shellQuote(txt) + " && omasaver test " + Commons.Util.shellQuote(currentEffect))
+      Qt.callLater(function() { brandingFile.reload() })
+    } else if (root.bar) {
       root.bar.run("omasaver test " + Commons.Util.shellQuote(currentEffect))
     }
   }
@@ -122,17 +126,30 @@ Panel {
 
         PanelSeparator { width: parent.width }
 
-        // Section: Text input
+        // Section: Text input (Max 7 characters to fit screen boundary)
         Column {
           width: parent.width
           spacing: Style.space(6)
 
-          Text {
-            text: "Screensaver Text / Name:"
-            color: root.barForeground
-            font.family: Style.font.family
-            font.pixelSize: Style.font.caption
-            font.bold: true
+          Row {
+            width: parent.width
+
+            Text {
+              text: "Screensaver Text / Name:"
+              color: root.barForeground
+              font.family: Style.font.family
+              font.pixelSize: Style.font.caption
+              font.bold: true
+              width: parent.width - counterLabel.implicitWidth
+            }
+
+            Text {
+              id: counterLabel
+              text: root.inputText.length + " / 7 max"
+              color: root.inputText.length >= 7 ? Commons.Color.accent : Qt.rgba(1, 1, 1, 0.45)
+              font.family: Style.font.family
+              font.pixelSize: Style.font.caption
+            }
           }
 
           Row {
@@ -143,8 +160,13 @@ Panel {
               id: inputField
               width: parent.width - applyBtn.width - Style.space(8)
               text: root.inputText
-              placeholderText: "Enter custom text (e.g. NIHAL)"
+              maximumLength: 7
+              placeholderText: "1-7 chars (e.g. NIHAL, OMARCHY)"
               onTextChanged: {
+                var clean = text.toUpperCase().slice(0, 7)
+                if (text !== clean) {
+                  text = clean
+                }
                 root.inputText = text
                 root.previewText = Model.generateAscii(text)
               }
@@ -186,9 +208,10 @@ Panel {
             readonly property int previewCols: root.previewText ? (root.previewText.split("\n")[0] || "").length : 0
             readonly property real autoFontSize: {
               if (previewCols <= 0) return Style.space(9)
-              var avail = previewBox.width - Style.space(24)
+              var w = previewBox.width > 0 ? previewBox.width : Style.space(520)
+              var avail = w - Style.space(24)
               var needed = avail / (previewCols * 0.61)
-              return Math.max(5.0, Math.min(Style.space(9), Math.floor(needed * 10) / 10))
+              return Math.max(7.0, Math.min(Style.space(11), Math.floor(needed * 10) / 10))
             }
 
             Flickable {
