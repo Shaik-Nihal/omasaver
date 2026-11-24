@@ -30,7 +30,7 @@
 - **Custom Text Engine** — Renders any word (up to 7 characters) in Omarchy's official 8-row curved block font with uniform 2-space kerning, exactly matching the default `OMARCHY` logo typography.
 - **24 Animation Effects** — Powered by [`ttfx`](https://github.com/ChrisBuilds/terminaltexteffects), including Matrix rain, Decryption, Fireworks, Black Hole, Laser Etch, and more.
 - **Shell Bar Widget** — A clickable icon in the Omarchy top bar that opens a popup panel with live ASCII art preview, text input, effect selector, and action buttons.
-- **Test Drive** — Preview any animation in a floating terminal window at the official screensaver font size (18pt) and 120 FPS before committing.
+- **Test Drive** — Preview any animation in full screen (with top bar hidden) at the official screensaver font size (18pt) and 120 FPS before committing.
 - **Full Screen Launch** — Trigger the full-screen screensaver directly from the panel.
 - **One-Click Reset** — Revert to the stock Omarchy logo with a desktop notification.
 - **Supports A–Z, 0–9, and symbols** — Full uppercase alphabet, digits, and special characters (`-`, `!`, `.`, space).
@@ -56,7 +56,7 @@ Omasaver runs on **Omarchy Linux** and depends on the following packages that sh
 | **python3** ≥ 3.10 | Glyph rendering engine in `omasaver set` | ✅ Yes |
 | **ttfx** (`terminaltexteffects`) | Terminal animation effects engine | ✅ Yes |
 | **foot** | Terminal emulator for Test Drive window | ✅ Yes |
-| **hyprctl** | Hyprland IPC for floating window dispatch | ✅ Yes |
+| **hyprctl** | Hyprland IPC for fullscreen dispatch and input detection | ✅ Yes |
 | **Quickshell** | Omarchy shell framework (runs QML plugins) | ✅ Yes |
 | **jq** | JSON processing for status checks | ✅ Yes |
 
@@ -162,7 +162,7 @@ rm -rf ~/.config/omarchy/plugins/nihal.omasaver
 
 | Button | Action |
 |---|---|
-| **󰐥 Test Drive** | Opens a floating terminal window previewing the selected animation effect at font size 18 and 120 FPS. Press any key to exit. |
+| **󰐥 Test Drive** | Launches full-screen preview of the selected animation effect (top bar hidden). Press any key or move mouse to exit. |
 | **󰁯 Reset** | Reverts to the default Omarchy logo and shows a desktop notification. |
 | **󱄄 Full Screen** | Closes the panel and launches the full-screen screensaver immediately. |
 
@@ -176,7 +176,7 @@ omasaver set "NIHAL"
 omasaver set "HELLO"
 omasaver set "2025"
 
-# Preview an animation effect in a floating terminal
+# Preview an animation effect in full screen
 omasaver test matrix
 omasaver test fireworks
 omasaver test decrypt
@@ -281,7 +281,7 @@ Example rendering of `NIHAL`:
 1. `omasaver set "TEXT"` renders the text using the embedded Python glyph engine and writes the result to `~/.config/omarchy/branding/screensaver.txt`.
 2. The Omarchy screensaver reads this file on each activation. If the file does not exist, it falls back to the default logo at `/usr/share/omarchy/logo.txt`.
 3. `omasaver reset` copies the default logo back to the branding file, restoring factory behavior.
-4. `omasaver test <effect>` generates a temporary runner script, launches a floating `foot` terminal with `--app-id=TUI.float` using the screensaver font configuration, and runs `ttfx` with the selected effect in a continuous loop until a key is pressed.
+4. `omasaver test <effect>` generates a temporary runner script, launches `foot` terminal with `--app-id=omasaver.fullscreen --fullscreen` covering the entire screen (with the top bar hidden), and runs `ttfx` in a continuous loop until any key is pressed or the mouse is moved.
 
 ---
 

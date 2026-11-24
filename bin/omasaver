@@ -876,16 +876,9 @@ cmd_test() {
     effect_flag="--random-effect"
   fi
 
-  local max_line_len
-  max_line_len=$(awk '{ if (length > max) max = length } END { print (max ? max : 80) }' "$target_file")
-  local win_width=$(( max_line_len + 16 ))
-  if (( win_width < 100 )); then
-    win_width=100
-  fi
+  echo "Launching fullscreen screensaver (effect: '$effect', 18pt font & 120 FPS)..."
 
-  echo "Testing screensaver effect: '$effect' (matching default Omarchy font size 18 & 120 FPS)..."
-
-  local runner="/tmp/omasaver-test-run.sh"
+  local runner="/tmp/omasaver-run.sh"
   cat > "$runner" << 'RUNNER_EOF'
 #!/bin/bash
 TARGET="$1"
@@ -893,12 +886,30 @@ EFFECT="$2"
 printf '\033]11;rgb:00/00/00\007'
 printf '\033[?25l'
 stty -echo 2>/dev/null
+
+if command -v hyprctl >/dev/null 2>&1; then
+  hyprctl eval 'hl.config({ cursor = { invisible = true } })' &>/dev/null || hyprctl keyword cursor:invisible true &>/dev/null || true
+fi
+
 cleanup() {
+  if command -v hyprctl >/dev/null 2>&1; then
+    hyprctl eval 'hl.config({ cursor = { invisible = false } })' &>/dev/null || hyprctl keyword cursor:invisible false &>/dev/null || true
+  fi
   printf '\033[?25h'
   stty echo 2>/dev/null
+  pkill -P $$ 2>/dev/null || true
   exit 0
 }
-trap cleanup SIGINT SIGTERM EXIT
+trap cleanup SIGINT SIGTERM EXIT SIGHUP
+
+sleep 0.4
+
+init_pos=""
+if command -v hyprctl >/dev/null 2>&1; then
+  init_pos=$(hyprctl cursorpos 2>/dev/null)
+fi
+
+has_focused=0
 
 while true; do
   if [ "$EFFECT" = "--random-effect" ]; then
@@ -908,9 +919,36 @@ while true; do
   fi
   PID=$!
   while kill -0 $PID 2>/dev/null; do
-    if read -n1 -t 0.2; then
+    if read -n1 -t 0.1; then
       kill $PID 2>/dev/null
       cleanup
+    fi
+    if [ -n "$init_pos" ]; then
+      cur_pos=$(hyprctl cursorpos 2>/dev/null)
+      if [ -n "$cur_pos" ]; then
+        IFS=',' read -r cx cy <<< "$cur_pos"
+        IFS=',' read -r ix iy <<< "$init_pos"
+        dx=$(( cx - ix ))
+        dy=$(( cy - iy ))
+        dist=$(( dx*dx + dy*dy ))
+        if [ "$dist" -gt 100 ]; then
+          kill $PID 2>/dev/null
+          cleanup
+        fi
+      fi
+    fi
+    if command -v hyprctl >/dev/null 2>&1; then
+      active_class=$(hyprctl activewindow -j 2>/dev/null | jq -r '.class // empty')
+      if [ "$has_focused" -eq 0 ]; then
+        if [ "$active_class" = "omasaver.fullscreen" ]; then
+          has_focused=1
+        fi
+      else
+        if [ -n "$active_class" ] && [ "$active_class" != "omasaver.fullscreen" ]; then
+          kill $PID 2>/dev/null
+          cleanup
+        fi
+      fi
     fi
   done
 done
@@ -922,20 +960,28 @@ RUNNER_EOF
     foot_cfg="--config=/usr/share/omarchy/default/foot/screensaver.ini"
   fi
 
-  if command -v hyprctl >/dev/null 2>&1 && [ -n "${HYPRLAND_INSTANCE_SIGNATURE:-}" ]; then
-    hyprctl dispatch "hl.dsp.exec_cmd([[foot --app-id=TUI.float $foot_cfg -W ${win_width}x26 $runner $target_file $effect_flag]])" >/dev/null 2>&1 || \
-      "$runner" "$target_file" "$effect_flag"
+  local term_cmd=""
+  if command -v foot >/dev/null 2>&1; then
+    term_cmd="foot --app-id=omasaver.fullscreen --fullscreen $foot_cfg $runner $target_file $effect_flag"
+  elif command -v ghostty >/dev/null 2>&1; then
+    term_cmd="ghostty --class=omasaver.fullscreen --fullscreen=true -e $runner $target_file $effect_flag"
+  elif command -v alacritty >/dev/null 2>&1; then
+    term_cmd="alacritty --class omasaver.fullscreen -o window.startup_mode=Fullscreen -e $runner $target_file $effect_flag"
+  elif command -v kitty >/dev/null 2>&1; then
+    term_cmd="kitty --class=omasaver.fullscreen --start-as=fullscreen $runner $target_file $effect_flag"
+  fi
+
+  if command -v hyprctl >/dev/null 2>&1 && [ -n "${HYPRLAND_INSTANCE_SIGNATURE:-}" ] && [ -n "$term_cmd" ]; then
+    hyprctl dispatch "hl.dsp.exec_cmd([[$term_cmd]])" >/dev/null 2>&1 || \
+      $term_cmd
   else
     "$runner" "$target_file" "$effect_flag"
   fi
 }
 
 cmd_run() {
-  if command -v omarchy-launch-screensaver >/dev/null 2>&1; then
-    omarchy-launch-screensaver force
-  else
-    omarchy launch screensaver
-  fi
+  local effect="${1:-random}"
+  cmd_test "$effect"
 }
 
 cmd_list() {

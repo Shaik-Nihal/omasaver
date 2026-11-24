@@ -75,6 +75,7 @@ Panel {
   }
 
   function testDrive() {
+    root.close()
     var maxL = root.fontStyle === "compact" ? 14 : 7
     var txt = inputText.trim().slice(0, maxL)
     if (txt && root.bar) {
@@ -552,7 +553,7 @@ Panel {
             text: "󰐥 Test Drive"
             width: (parent.width - Style.space(16)) / 3
             bordered: true
-            tooltipText: "Preview in floating terminal"
+            tooltipText: "Preview screensaver in full screen (font size 18, 120 FPS)"
             onClicked: root.testDrive()
           }
 
