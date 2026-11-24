@@ -1,5 +1,6 @@
 import QtQuick
 import Quickshell
+import qs.Commons as Commons
 import qs.Ui
 
 BarWidget {
@@ -64,12 +65,12 @@ BarWidget {
     onPressed: function(buttonCode) {
       if (buttonCode === Qt.LeftButton) root.toggle()
       else if (buttonCode === Qt.RightButton) {
-        if (root.bar) {
-          var home = Quickshell.env("HOME")
-          var pluginBin = home + "/.config/omarchy/plugins/nihal.omasaver/bin/omasaver"
-          var localBin = home + "/.local/bin/omasaver"
-          var binCmd = "([ -x " + localBin + " ] && " + localBin + " || [ -x " + pluginBin + " ] && " + pluginBin + " || omasaver)"
-          root.bar.run(binCmd + " run")
+        if (panelLoader.item) {
+          panelLoader.item.launchScreensaver()
+        } else if (root.bar) {
+          var pluginBin = decodeURIComponent(String(Qt.resolvedUrl("bin/omasaver") || "")).replace(/^file:\/\//, "")
+          var qPlugin = Commons.Util.shellQuote(pluginBin)
+          root.bar.run("if [ -f " + qPlugin + " ]; then bash " + qPlugin + " run; else omasaver run; fi")
         }
       }
     }

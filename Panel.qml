@@ -48,22 +48,60 @@ Panel {
     return false
   }
 
-  // Self-contained CLI resolver: looks in ~/.local/bin, plugin directory, or PATH
-  readonly property string omasaverBin: {
-    var home = Quickshell.env("HOME")
-    var pluginBin = home + "/.config/omarchy/plugins/nihal.omasaver/bin/omasaver"
-    var localBin = home + "/.local/bin/omasaver"
-    return "([ -x " + Commons.Util.shellQuote(localBin) + " ] && " + Commons.Util.shellQuote(localBin) + " || [ -x " + Commons.Util.shellQuote(pluginBin) + " ] && " + Commons.Util.shellQuote(pluginBin) + " || omasaver)"
+  // Resolve the plugin's bundled CLI script cleanly regardless of install location
+  readonly property string pluginBin: {
+    var resolved = decodeURIComponent(String(Qt.resolvedUrl("bin/omasaver") || "")).replace(/^file:\/\//, "")
+    if (resolved && resolved.indexOf("bin/omasaver") !== -1) return resolved
+    return Quickshell.env("HOME") + "/.config/omarchy/plugins/nihal.omasaver/bin/omasaver"
   }
 
-  Component.onCompleted: {
-    if (root.bar) {
-      // Auto-symlink omasaver to ~/.local/bin so the CLI is immediately available in terminal without manual setup
-      var home = Quickshell.env("HOME")
-      var pluginBin = home + "/.config/omarchy/plugins/nihal.omasaver/bin/omasaver"
-      var localBin = home + "/.local/bin/omasaver"
-      root.bar.run("mkdir -p ~/.local/bin && [ -x " + Commons.Util.shellQuote(pluginBin) + " ] && [ ! -e " + Commons.Util.shellQuote(localBin) + " ] && ln -sf " + Commons.Util.shellQuote(pluginBin) + " " + Commons.Util.shellQuote(localBin) + " 2>/dev/null || true")
+  property bool _symlinkChecked: false
+
+  function ensureCliSymlink() {
+    if (root._symlinkChecked || !root.bar) return
+    root._symlinkChecked = true
+    // Auto-symlink omasaver to ~/.local/bin so the CLI is immediately available in terminal without manual setup
+    var home = Quickshell.env("HOME")
+    var localBin = home + "/.local/bin/omasaver"
+    var qPlugin = Commons.Util.shellQuote(root.pluginBin)
+    var qLocal = Commons.Util.shellQuote(localBin)
+    root.bar.run(
+      "mkdir -p ~/.local/bin && " +
+      "{ [ -f " + qPlugin + " ] && chmod +x " + qPlugin + " 2>/dev/null || true; } && " +
+      "{ [ -x " + qPlugin + " ] && [ ! -e " + qLocal + " ] && ln -sf " + qPlugin + " " + qLocal + " 2>/dev/null || true; }"
+    )
+  }
+
+  onBarChanged: ensureCliSymlink()
+  Component.onCompleted: ensureCliSymlink()
+
+  function formatArgs(args) {
+    var out = []
+    for (var i = 0; i < args.length; i++) {
+      out.push(Commons.Util.shellQuote(String(args[i])))
     }
+    return out.join(" ")
+  }
+
+  function runOmasaverSequence(commandArgLists) {
+    if (!root.bar || !commandArgLists || commandArgLists.length === 0) return
+    var home = Quickshell.env("HOME")
+    var localBin = home + "/.local/bin/omasaver"
+    var qPlugin = Commons.Util.shellQuote(root.pluginBin)
+    var qLocal = Commons.Util.shellQuote(localBin)
+    var resolver =
+      "if [ -f " + qPlugin + " ]; then run_oma() { bash " + qPlugin + " \"$@\"; }; " +
+      "elif [ -x " + qLocal + " ]; then run_oma() { " + qLocal + " \"$@\"; }; " +
+      "else run_oma() { omasaver \"$@\"; }; fi"
+    var calls = []
+    for (var i = 0; i < commandArgLists.length; i++) {
+      calls.push("run_oma " + formatArgs(commandArgLists[i]))
+    }
+    root.bar.run(resolver + "; " + calls.join(" && "))
+  }
+
+  function runOmasaver(args) {
+    runOmasaverSequence([args])
   }
 
   function applyCustomText() {
@@ -72,13 +110,11 @@ Panel {
     if (!txt) return
     root.dynamicMode = "off"
     root.updatePreview()
-    if (root.bar) {
-      var cmd = root.omasaverBin + " set " + Commons.Util.shellQuote(txt) + " --font " + Commons.Util.shellQuote(root.fontStyle)
-      if (root.subtitleText.trim().length > 0) {
-        cmd += " --subtitle " + Commons.Util.shellQuote(root.subtitleText.trim())
-      }
-      root.bar.run(cmd)
+    var setArgs = ["set", txt, "--font", root.fontStyle]
+    if (root.subtitleText.trim().length > 0) {
+      setArgs.push("--subtitle", root.subtitleText.trim())
     }
+    root.runOmasaver(setArgs)
   }
 
   function resetToDefault() {
@@ -87,32 +123,27 @@ Panel {
     root.subtitleText = ""
     root.inputText = "OMARCHY"
     root.updatePreview()
-    if (root.bar) {
-      root.bar.run(root.omasaverBin + " reset")
-    }
+    root.runOmasaver(["reset"])
   }
 
   function testDrive() {
-    root.close()
+    if (root.opened) root.close()
     var maxL = root.fontStyle === "compact" ? 14 : 7
     var txt = inputText.trim().slice(0, maxL)
-    if (txt && root.bar) {
-      var cmd = root.omasaverBin + " set " + Commons.Util.shellQuote(txt) + " --font " + Commons.Util.shellQuote(root.fontStyle)
+    if (root.dynamicMode === "off" && txt) {
+      var setArgs = ["set", txt, "--font", root.fontStyle]
       if (root.subtitleText.trim().length > 0) {
-        cmd += " --subtitle " + Commons.Util.shellQuote(root.subtitleText.trim())
+        setArgs.push("--subtitle", root.subtitleText.trim())
       }
-      cmd += " && " + root.omasaverBin + " test " + Commons.Util.shellQuote(currentEffect)
-      root.bar.run(cmd)
-    } else if (root.bar) {
-      root.bar.run(root.omasaverBin + " test " + Commons.Util.shellQuote(currentEffect))
+      root.runOmasaverSequence([setArgs, ["test", currentEffect]])
+    } else {
+      root.runOmasaver(["test", currentEffect])
     }
   }
 
   function launchScreensaver() {
-    root.close()
-    if (root.bar) {
-      root.bar.run(root.omasaverBin + " run")
-    }
+    if (root.opened) root.close()
+    root.runOmasaver(["run"])
   }
 
   FileView {
@@ -390,9 +421,7 @@ Panel {
                 var timeStr = h + ":" + m
                 root.inputText = timeStr
                 root.updatePreview()
-                if (root.bar) {
-                  root.bar.run(root.omasaverBin + " dynamic clock")
-                }
+                root.runOmasaver(["dynamic", "clock"])
               }
             }
 
@@ -408,9 +437,7 @@ Panel {
                 var uname = (Quickshell.env("USER") || "").trim().toUpperCase().slice(0, 7) || "USER"
                 root.inputText = uname
                 root.updatePreview()
-                if (root.bar) {
-                  root.bar.run(root.omasaverBin + " dynamic user")
-                }
+                root.runOmasaver(["dynamic", "user"])
               }
             }
 
@@ -426,9 +453,7 @@ Panel {
                 var h = root.getHostname()
                 root.inputText = h
                 root.updatePreview()
-                if (root.bar) {
-                  root.bar.run(root.omasaverBin + " dynamic host")
-                }
+                root.runOmasaver(["dynamic", "host"])
               }
             }
 
@@ -440,9 +465,7 @@ Panel {
               tooltipText: "Stop live dynamic mode"
               onClicked: {
                 root.dynamicMode = "off"
-                if (root.bar) {
-                  root.bar.run(root.omasaverBin + " dynamic stop")
-                }
+                root.runOmasaver(["dynamic", "stop"])
               }
             }
           }

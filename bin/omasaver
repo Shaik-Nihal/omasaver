@@ -878,7 +878,8 @@ cmd_test() {
 
   echo "Launching fullscreen screensaver (effect: '$effect', 18pt font & 120 FPS)..."
 
-  local runner="/tmp/omasaver-run.sh"
+  local runner
+  runner=$(mktemp "${XDG_RUNTIME_DIR:-/tmp}/omasaver-run.XXXXXX.sh")
   cat > "$runner" << 'RUNNER_EOF'
 #!/bin/bash
 TARGET="$1"
@@ -898,6 +899,7 @@ cleanup() {
   printf '\033[?25h'
   stty echo 2>/dev/null
   pkill -P $$ 2>/dev/null || true
+  rm -f "$0" 2>/dev/null || true
   exit 0
 }
 trap cleanup SIGINT SIGTERM EXIT SIGHUP
@@ -960,20 +962,29 @@ RUNNER_EOF
     foot_cfg="--config=/usr/share/omarchy/default/foot/screensaver.ini"
   fi
 
-  local term_cmd=""
+  local term_args=()
   if command -v foot >/dev/null 2>&1; then
-    term_cmd="foot --app-id=omasaver.fullscreen --fullscreen $foot_cfg $runner $target_file $effect_flag"
+    term_args=(foot --app-id=omasaver.fullscreen --fullscreen)
+    [ -n "$foot_cfg" ] && term_args+=("$foot_cfg")
+    term_args+=("$runner" "$target_file" "$effect_flag")
   elif command -v ghostty >/dev/null 2>&1; then
-    term_cmd="ghostty --class=omasaver.fullscreen --fullscreen=true -e $runner $target_file $effect_flag"
+    term_args=(ghostty --class=omasaver.fullscreen --fullscreen=true -e "$runner" "$target_file" "$effect_flag")
   elif command -v alacritty >/dev/null 2>&1; then
-    term_cmd="alacritty --class omasaver.fullscreen -o window.startup_mode=Fullscreen -e $runner $target_file $effect_flag"
+    term_args=(alacritty --class omasaver.fullscreen -o window.startup_mode=Fullscreen -e "$runner" "$target_file" "$effect_flag")
   elif command -v kitty >/dev/null 2>&1; then
-    term_cmd="kitty --class=omasaver.fullscreen --start-as=fullscreen $runner $target_file $effect_flag"
+    term_args=(kitty --class=omasaver.fullscreen --start-as=fullscreen "$runner" "$target_file" "$effect_flag")
   fi
 
-  if command -v hyprctl >/dev/null 2>&1 && [ -n "${HYPRLAND_INSTANCE_SIGNATURE:-}" ] && [ -n "$term_cmd" ]; then
-    hyprctl dispatch "hl.dsp.exec_cmd([[$term_cmd]])" >/dev/null 2>&1 || \
-      $term_cmd
+  if (( ${#term_args[@]} > 0 )); then
+    if command -v hyprctl >/dev/null 2>&1 && [ -n "${HYPRLAND_INSTANCE_SIGNATURE:-}" ]; then
+      local term_cmd
+      printf -v term_cmd '%q ' "${term_args[@]}"
+      hyprctl dispatch "hl.dsp.exec_cmd([[$term_cmd]])" >/dev/null 2>&1 || \
+        hyprctl dispatch exec -- "$term_cmd" >/dev/null 2>&1 || \
+        "${term_args[@]}"
+    else
+      "${term_args[@]}"
+    fi
   else
     "$runner" "$target_file" "$effect_flag"
   fi
@@ -1022,7 +1033,8 @@ case "${1:-help}" in
     cmd_test "$@"
     ;;
   run)
-    cmd_run
+    shift
+    cmd_run "$@"
     ;;
   list)
     cmd_list
