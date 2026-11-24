@@ -415,18 +415,89 @@ var GLYPHS = {
   ]
 };
 
+var GLYPHS_COMPACT = {
+  "A": [" ▄█▄ ", "█   █", "█████", "█   █", "█   █"],
+  "B": ["████▄", "███▀ ", "████▄", "█   █", "████▀"],
+  "C": [" ▄███", "█    ", "█    ", "█    ", " ▀███"],
+  "D": ["████▄", "█   █", "█   █", "█   █", "████▀"],
+  "E": ["█████", "█▄▄▄ ", "███▀ ", "█    ", "█████"],
+  "F": ["█████", "█▄▄▄ ", "███▀ ", "█    ", "█    "],
+  "G": [" ▄███", "█    ", "█ ▄▄▄", "█   █", " ▀███"],
+  "H": ["█   █", "█   █", "█████", "█   █", "█   █"],
+  "I": ["▄███▄", "  █  ", "  █  ", "  █  ", "▀███▀"],
+  "J": ["   ▄█", "    █", "    █", "█   █", " ▀██▀"],
+  "K": ["█  ▄█", "█ ▄█▀", "███▄ ", "█  ██", "█   █"],
+  "L": ["█    ", "█    ", "█    ", "█   ▄", "█████"],
+  "M": ["█   █", "██ ██", "█ █ █", "█   █", "█   █"],
+  "N": ["█   █", "██  █", "█ █ █", "█  ██", "█   █"],
+  "O": [" ▄█▄ ", "█   █", "█   █", "█   █", " ▀█▀ "],
+  "P": ["████▄", "█   █", "████▀", "█    ", "█    "],
+  "Q": [" ▄█▄ ", "█   █", "█   █", " ▀█▄█", "   ▀█"],
+  "R": ["████▄", "█   █", "████▀", "█  █ ", "█   █"],
+  "S": [" ▄███", "▀██▄ ", "  ▀██", "▄   █", "████▀"],
+  "T": ["█████", "  █  ", "  █  ", "  █  ", "  █  "],
+  "U": ["█   █", "█   █", "█   █", "█   █", " ▀██▀"],
+  "V": ["█   █", "█   █", "█   █", " ▀█▀ ", "  ▀  "],
+  "W": ["█   █", "█   █", "█ █ █", "██ ██", "█   █"],
+  "X": ["█   █", " ▀█▀ ", "  █  ", " ▄█▄ ", "█   █"],
+  "Y": ["█   █", " ▀█▀ ", "  █  ", "  █  ", "  █  "],
+  "Z": ["█████", "   █▀", "  █  ", " █   ", "█████"],
+  "0": [" ▄█▄ ", "█  ▄█", "█ █ █", "█▄  █", " ▀█▀ "],
+  "1": [" ▄██ ", "   █ ", "   █ ", "   █ ", " ▄███"],
+  "2": ["████▄", "   ▄█", " ▄██▀", "█▄   ", "█████"],
+  "3": ["████▄", "   ▄█", " ▄██▀", "   ▄█", "████▀"],
+  "4": ["█  █ ", "█  █ ", "█████", "   █ ", "   █ "],
+  "5": ["█████", "█▄▄▄ ", " ▀▀██", "   ▄█", "████▀"],
+  "6": [" ▄███", "█▄▄▄ ", "██  █", "█   █", " ▀██▀"],
+  "7": ["█████", "   ▄█", "  ▄█ ", " ▄█  ", " █   "],
+  "8": [" ▄█▄ ", "█   █", " ▀█▀ ", "█   █", " ▀█▀ "],
+  "9": [" ▄█▄ ", "█   █", " ▀███", "   ▄█", " ▀██▀"],
+  " ": ["    ", "    ", "    ", "    ", "    "],
+  ":": ["     ", "  █  ", "     ", "  █  ", "     "],
+  "-": ["     ", "     ", "█████", "     ", "     "],
+  "!": ["  █  ", "  █  ", "  █  ", "     ", "  █  "],
+  ".": ["     ", "     ", "     ", "     ", "  █  "]
+};
+
 var sep = "  "; // Exact 2 spaces uniform kerning (matching official Omarchy logo)
 
-function generateAscii(text) {
+function generateAscii(text, fontStyle, subtitle) {
   if (!text || text.length === 0) return "";
-  var clean = text.toUpperCase().trim().slice(0, 7);
-  var lines = ["", "", "", "", "", "", "", ""];
+  fontStyle = (fontStyle === "compact") ? "compact" : "large";
+  var isCompact = (fontStyle === "compact");
+  var maxLen = isCompact ? 14 : 7;
+  var clean = text.toUpperCase().trim().slice(0, maxLen);
+  var glyphDict = isCompact ? GLYPHS_COMPACT : GLYPHS;
+  var rowCount = isCompact ? 5 : 8;
+  var sepStr = isCompact ? " " : "  ";
+
+  var lines = [];
+  for (var r = 0; r < rowCount; r++) {
+    lines.push("");
+  }
 
   for (var i = 0; i < clean.length; i++) {
     var char = clean.charAt(i);
-    var glyph = GLYPHS[char] || GLYPHS[" "];
-    for (var r = 0; r < 8; r++) {
-      lines[r] += (lines[r].length > 0 ? sep : "") + glyph[r];
+    var glyph = glyphDict[char] || glyphDict[" "];
+    for (var r = 0; r < rowCount; r++) {
+      lines[r] += (lines[r].length > 0 ? sepStr : "") + glyph[r];
+    }
+  }
+
+  if (subtitle && subtitle.trim().length > 0) {
+    var sub = subtitle.trim().toUpperCase().slice(0, 36);
+    var logoWidth = 0;
+    for (var j = 0; j < lines.length; j++) {
+      if (lines[j].length > logoWidth) logoWidth = lines[j].length;
+    }
+    lines.push(""); // empty spacing row between logo and subtitle
+    if (sub.length < logoWidth) {
+      var pad = Math.floor((logoWidth - sub.length) / 2);
+      var padStr = "";
+      for (var p = 0; p < pad; p++) padStr += " ";
+      lines.push(padStr + sub);
+    } else {
+      lines.push(sub);
     }
   }
 

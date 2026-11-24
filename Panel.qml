@@ -17,10 +17,16 @@ Panel {
   property var hostWidget: null
 
   property string inputText: "NIHAL"
+  property string fontStyle: "large"
+  property string subtitleText: ""
   property string currentEffect: "matrix"
-  property string previewText: Model.generateAscii(inputText)
+  property string previewText: Model.generateAscii(inputText, fontStyle, subtitleText)
   property bool isCustomActive: false
   property string dynamicMode: "off"
+
+  function updatePreview() {
+    root.previewText = Model.generateAscii(root.inputText, root.fontStyle, root.subtitleText)
+  }
 
   function open() {
     root.controller.show()
@@ -43,29 +49,41 @@ Panel {
   }
 
   function applyCustomText() {
-    var txt = inputText.trim().slice(0, 7)
+    var maxL = root.fontStyle === "compact" ? 14 : 7
+    var txt = inputText.trim().slice(0, maxL)
     if (!txt) return
     root.dynamicMode = "off"
-    root.previewText = Model.generateAscii(txt)
+    root.updatePreview()
     if (root.bar) {
-      root.bar.run("omasaver set " + Commons.Util.shellQuote(txt))
+      var cmd = "omasaver set " + Commons.Util.shellQuote(txt) + " --font " + Commons.Util.shellQuote(root.fontStyle)
+      if (root.subtitleText.trim().length > 0) {
+        cmd += " --subtitle " + Commons.Util.shellQuote(root.subtitleText.trim())
+      }
+      root.bar.run(cmd)
     }
   }
 
   function resetToDefault() {
     root.dynamicMode = "off"
+    root.fontStyle = "large"
+    root.subtitleText = ""
     root.inputText = "OMARCHY"
-    root.previewText = Model.generateAscii("OMARCHY")
+    root.updatePreview()
     if (root.bar) {
       root.bar.run("omasaver reset")
     }
   }
 
   function testDrive() {
-    var txt = inputText.trim().slice(0, 7)
+    var maxL = root.fontStyle === "compact" ? 14 : 7
+    var txt = inputText.trim().slice(0, maxL)
     if (txt && root.bar) {
-      root.bar.run("omasaver set " + Commons.Util.shellQuote(txt) + " && omasaver test " + Commons.Util.shellQuote(currentEffect))
-      Qt.callLater(function() { brandingFile.reload() })
+      var cmd = "omasaver set " + Commons.Util.shellQuote(txt) + " --font " + Commons.Util.shellQuote(root.fontStyle)
+      if (root.subtitleText.trim().length > 0) {
+        cmd += " --subtitle " + Commons.Util.shellQuote(root.subtitleText.trim())
+      }
+      cmd += " && omasaver test " + Commons.Util.shellQuote(currentEffect)
+      root.bar.run(cmd)
     } else if (root.bar) {
       root.bar.run("omasaver test " + Commons.Util.shellQuote(currentEffect))
     }
@@ -99,8 +117,10 @@ Panel {
       var h = String(t.getHours()).padStart(2, "0")
       var m = String(t.getMinutes()).padStart(2, "0")
       var timeStr = h + ":" + m
-      root.inputText = timeStr
-      root.previewText = Model.generateAscii(timeStr)
+      if (root.inputText !== timeStr) {
+        root.inputText = timeStr
+        root.updatePreview()
+      }
     }
   }
 
@@ -157,57 +177,153 @@ Panel {
 
         PanelSeparator { width: parent.width }
 
-        // Section: Text input (Max 7 characters to fit screen boundary)
+        // Section: Font Style & Text Input
         Column {
           width: parent.width
-          spacing: Style.space(6)
+          spacing: Style.space(8)
 
-          Row {
+          // Font Style Selector Toggle
+          Column {
             width: parent.width
+            spacing: Style.space(4)
 
             Text {
-              text: "Screensaver Text / Name:"
+              text: "Font Style & Size:"
               color: root.barForeground
               font.family: Style.font.family
               font.pixelSize: Style.font.caption
               font.bold: true
-              width: parent.width - counterLabel.implicitWidth
             }
 
-            Text {
-              id: counterLabel
-              text: root.inputText.length + " / 7 max"
-              color: root.inputText.length >= 7 ? Commons.Color.accent : Qt.rgba(1, 1, 1, 0.45)
-              font.family: Style.font.family
-              font.pixelSize: Style.font.caption
+            Row {
+              width: parent.width
+              spacing: Style.space(8)
+
+              Button {
+                text: "󰬚 Large (8-row, 1-7 chars)"
+                width: (parent.width - Style.space(8)) / 2
+                bordered: true
+                selected: root.fontStyle === "large"
+                accent: Commons.Color.accent
+                tooltipText: "Authentic Omarchy 8-row curved font (up to 7 characters)"
+                onClicked: {
+                  root.fontStyle = "large"
+                  if (root.inputText.length > 7) {
+                    root.inputText = root.inputText.slice(0, 7)
+                  }
+                  root.updatePreview()
+                }
+              }
+
+              Button {
+                text: "󰬛 Compact (5-row, 1-14 chars)"
+                width: (parent.width - Style.space(8)) / 2
+                bordered: true
+                selected: root.fontStyle === "compact"
+                accent: Commons.Color.accent
+                tooltipText: "Compact 5-row font for longer names & words (up to 14 characters)"
+                onClicked: {
+                  root.fontStyle = "compact"
+                  root.updatePreview()
+                }
+              }
             }
           }
 
-          Row {
+          // Main text input
+          Column {
             width: parent.width
-            spacing: Style.space(8)
+            spacing: Style.space(4)
 
-            TextField {
-              id: inputField
-              width: parent.width - applyBtn.width - Style.space(8)
-              text: root.inputText
-              maximumLength: 7
-              placeholderText: "1-7 chars (e.g. NIHAL, OMARCHY)"
-              onTextEdited: {
-                root.dynamicMode = "off"
-                var clean = text.toUpperCase().slice(0, 7)
-                root.inputText = clean
-                root.previewText = Model.generateAscii(clean)
+            Row {
+              width: parent.width
+
+              Text {
+                text: "Screensaver Text / Name:"
+                color: root.barForeground
+                font.family: Style.font.family
+                font.pixelSize: Style.font.caption
+                font.bold: true
+                width: parent.width - counterLabel.implicitWidth
               }
-              onAccepted: root.applyCustomText()
+
+              Text {
+                id: counterLabel
+                readonly property int maxChars: root.fontStyle === "compact" ? 14 : 7
+                text: root.inputText.length + " / " + maxChars + " max"
+                color: root.inputText.length >= maxChars ? Commons.Color.accent : Qt.rgba(1, 1, 1, 0.45)
+                font.family: Style.font.family
+                font.pixelSize: Style.font.caption
+              }
             }
 
-            Button {
-              id: applyBtn
-              text: "Apply"
-              bordered: true
-              accent: Commons.Color.accent
-              onClicked: root.applyCustomText()
+            Row {
+              width: parent.width
+              spacing: Style.space(8)
+
+              TextField {
+                id: inputField
+                width: parent.width - applyBtn.width - Style.space(8)
+                text: root.inputText
+                maximumLength: root.fontStyle === "compact" ? 14 : 7
+                placeholderText: root.fontStyle === "compact" ? "1-14 chars (e.g. SHAIK NIHAL, DEVELOPER)" : "1-7 chars (e.g. NIHAL, OMARCHY)"
+                onTextEdited: {
+                  root.dynamicMode = "off"
+                  var maxL = root.fontStyle === "compact" ? 14 : 7
+                  var clean = text.toUpperCase().slice(0, maxL)
+                  root.inputText = clean
+                  root.updatePreview()
+                }
+                onAccepted: root.applyCustomText()
+              }
+
+              Button {
+                id: applyBtn
+                text: "Apply"
+                bordered: true
+                accent: Commons.Color.accent
+                onClicked: root.applyCustomText()
+              }
+            }
+          }
+
+          // Subtitle / Tagline input
+          Column {
+            width: parent.width
+            spacing: Style.space(4)
+
+            Row {
+              width: parent.width
+
+              Text {
+                text: "Subtitle / Tagline (Optional):"
+                color: root.barForeground
+                font.family: Style.font.family
+                font.pixelSize: Style.font.caption
+                font.bold: true
+                width: parent.width - subCounter.implicitWidth
+              }
+
+              Text {
+                id: subCounter
+                text: root.subtitleText.length + " / 36 max"
+                color: Qt.rgba(1, 1, 1, 0.45)
+                font.family: Style.font.family
+                font.pixelSize: Style.font.caption
+              }
+            }
+
+            TextField {
+              id: subtitleField
+              width: parent.width
+              text: root.subtitleText
+              maximumLength: 36
+              placeholderText: "e.g. SOFTWARE ENGINEER, ARCH LINUX, DO NOT TOUCH"
+              onTextEdited: {
+                root.subtitleText = text.toUpperCase().slice(0, 36)
+                root.updatePreview()
+              }
+              onAccepted: root.applyCustomText()
             }
           }
         }
@@ -254,7 +370,7 @@ Panel {
                 var m = String(t.getMinutes()).padStart(2, "0")
                 var timeStr = h + ":" + m
                 root.inputText = timeStr
-                root.previewText = Model.generateAscii(timeStr)
+                root.updatePreview()
                 if (root.bar) {
                   root.bar.run("omasaver dynamic clock")
                 }
@@ -272,7 +388,7 @@ Panel {
                 root.dynamicMode = "user"
                 var uname = (Quickshell.env("USER") || "").trim().toUpperCase().slice(0, 7) || "USER"
                 root.inputText = uname
-                root.previewText = Model.generateAscii(uname)
+                root.updatePreview()
                 if (root.bar) {
                   root.bar.run("omasaver dynamic user")
                 }
@@ -290,7 +406,7 @@ Panel {
                 root.dynamicMode = "host"
                 var h = root.getHostname()
                 root.inputText = h
-                root.previewText = Model.generateAscii(h)
+                root.updatePreview()
                 if (root.bar) {
                   root.bar.run("omasaver dynamic host")
                 }

@@ -37,25 +37,31 @@ show_help() {
 Omasaver - Custom Screensaver Branding & Effect Switcher for Omarchy
 
 Usage:
-  omasaver set "<text>"        Generate and set custom screensaver in official Omarchy font
-  omasaver reset               Revert to official Omarchy logo
-  omasaver test [effect]       Preview effect in floating terminal (default: decrypt)
-  omasaver run                 Launch full-screen screensaver immediately
-  omasaver list                List all 24 available animation effects
-  omasaver status              Show current screensaver branding status
-  omasaver dynamic <mode>      Activate a live dynamic screensaver mode
-  omasaver dynamic stop        Stop any running dynamic daemon
-  omasaver dynamic status      Show dynamic mode status
-  omasaver help                Show this help message
+  omasaver set "<text>" [options]  Generate and set screensaver in official Omarchy font
+  omasaver reset                   Revert to official Omarchy logo
+  omasaver test [effect]           Preview effect in floating terminal (default: decrypt)
+  omasaver run                     Launch full-screen screensaver immediately
+  omasaver list                    List all 24 available animation effects
+  omasaver status                  Show current screensaver branding status
+  omasaver dynamic <mode>          Activate a live dynamic screensaver mode
+  omasaver dynamic stop            Stop any running dynamic daemon
+  omasaver dynamic status          Show dynamic mode status
+  omasaver help                    Show this help message
+
+Options for 'set':
+  --font, -f <large|compact>       Font size: 'large' (8-row, 1-7 chars) or 'compact' (5-row, 1-14 chars)
+  --subtitle, -s "<text>"          Optional centered subtitle / tagline below main logo
 
 Dynamic Modes:
-  omasaver dynamic clock       Live clock (updates every minute, e.g. 14:30)
-  omasaver dynamic user        Display current system username
-  omasaver dynamic host        Display current system hostname
+  omasaver dynamic clock           Live clock (updates every minute, e.g. 14:30)
+  omasaver dynamic user            Display current system username
+  omasaver dynamic host            Display current system hostname
 
 Examples:
   omasaver set "NIHAL"
-  omasaver set "BUTTERFLY"
+  omasaver set "NIHAL" --subtitle "SOFTWARE ENGINEER"
+  omasaver set "SHAIK NIHAL" --font compact
+  omasaver set "DEVELOPER" --font compact --subtitle "ARCH LINUX"
   omasaver test decrypt
   omasaver test fireworks
   omasaver dynamic clock
@@ -66,28 +72,103 @@ HELP
 
 cmd_set() {
   _stop_dynamic_daemon
-  local text="${1:-}"
+  local text=""
+  local subtitle=""
+  local font="large"
+
+  while (( $# > 0 )); do
+    case "$1" in
+      --font|-f)
+        font="${2:-large}"
+        shift 2
+        ;;
+      --subtitle|-s)
+        subtitle="${2:-}"
+        shift 2
+        ;;
+      *)
+        if [ -z "$text" ]; then
+          text="$1"
+        elif [ -z "$subtitle" ]; then
+          subtitle="$1"
+        fi
+        shift
+        ;;
+    esac
+  done
+
   if [ -z "$text" ]; then
-    echo "Error: Please provide text to set (1-7 characters), e.g.: omasaver set \"NIHAL\"" >&2
+    echo "Error: Please provide text to set, e.g.: omasaver set \"NIHAL\"" >&2
     exit 1
   fi
 
   local clean
   clean=$(echo "$text" | tr '[:lower:]' '[:upper:]' | xargs)
 
-  if [ ${#clean} -gt 7 ]; then
-    echo "⚠ Notice: Limiting screensaver text to 7 characters for perfect terminal & screensaver boundaries."
-    echo "  Original: '$clean' (${#clean} chars) -> Using: '${clean:0:7}'"
-    clean="${clean:0:7}"
+  local max_chars=7
+  if [ "$font" = "compact" ]; then
+    max_chars=14
+  fi
+
+  if [ ${#clean} -gt $max_chars ]; then
+    echo "⚠ Notice: Limiting screensaver text to $max_chars characters for '$font' font."
+    echo "  Original: '$clean' (${#clean} chars) -> Using: '${clean:0:$max_chars}'"
+    clean="${clean:0:$max_chars}"
   fi
 
   mkdir -p "$BRANDING_DIR"
 
-  python3 - "$clean" "$BRANDING_FILE" << 'PYEOF'
-import sys, json
+  python3 - "$clean" "$BRANDING_FILE" "$font" "$subtitle" << 'PYEOF'
+import sys
 
-text = sys.argv[1].upper()[:7]
+text = sys.argv[1].upper()
 out_file = sys.argv[2]
+font_style = sys.argv[3] if len(sys.argv) > 3 else "large"
+subtitle = sys.argv[4] if len(sys.argv) > 4 else ""
+
+GLYPHS_5 = {
+  "A": [" ▄█▄ ", "█   █", "█████", "█   █", "█   █"],
+  "B": ["████▄", "███▀ ", "████▄", "█   █", "████▀"],
+  "C": [" ▄███", "█    ", "█    ", "█    ", " ▀███"],
+  "D": ["████▄", "█   █", "█   █", "█   █", "████▀"],
+  "E": ["█████", "█▄▄▄ ", "███▀ ", "█    ", "█████"],
+  "F": ["█████", "█▄▄▄ ", "███▀ ", "█    ", "█    "],
+  "G": [" ▄███", "█    ", "█ ▄▄▄", "█   █", " ▀███"],
+  "H": ["█   █", "█   █", "█████", "█   █", "█   █"],
+  "I": ["▄███▄", "  █  ", "  █  ", "  █  ", "▀███▀"],
+  "J": ["   ▄█", "    █", "    █", "█   █", " ▀██▀"],
+  "K": ["█  ▄█", "█ ▄█▀", "███▄ ", "█  ██", "█   █"],
+  "L": ["█    ", "█    ", "█    ", "█   ▄", "█████"],
+  "M": ["█   █", "██ ██", "█ █ █", "█   █", "█   █"],
+  "N": ["█   █", "██  █", "█ █ █", "█  ██", "█   █"],
+  "O": [" ▄█▄ ", "█   █", "█   █", "█   █", " ▀█▀ "],
+  "P": ["████▄", "█   █", "████▀", "█    ", "█    "],
+  "Q": [" ▄█▄ ", "█   █", "█   █", " ▀█▄█", "   ▀█"],
+  "R": ["████▄", "█   █", "████▀", "█  █ ", "█   █"],
+  "S": [" ▄███", "▀██▄ ", "  ▀██", "▄   █", "████▀"],
+  "T": ["█████", "  █  ", "  █  ", "  █  ", "  █  "],
+  "U": ["█   █", "█   █", "█   █", "█   █", " ▀██▀"],
+  "V": ["█   █", "█   █", "█   █", " ▀█▀ ", "  ▀  "],
+  "W": ["█   █", "█   █", "█ █ █", "██ ██", "█   █"],
+  "X": ["█   █", " ▀█▀ ", "  █  ", " ▄█▄ ", "█   █"],
+  "Y": ["█   █", " ▀█▀ ", "  █  ", "  █  ", "  █  "],
+  "Z": ["█████", "   █▀", "  █  ", " █   ", "█████"],
+  "0": [" ▄█▄ ", "█  ▄█", "█ █ █", "█▄  █", " ▀█▀ "],
+  "1": [" ▄██ ", "   █ ", "   █ ", "   █ ", " ▄███"],
+  "2": ["████▄", "   ▄█", " ▄██▀", "█▄   ", "█████"],
+  "3": ["████▄", "   ▄█", " ▄██▀", "   ▄█", "████▀"],
+  "4": ["█  █ ", "█  █ ", "█████", "   █ ", "   █ "],
+  "5": ["█████", "█▄▄▄ ", " ▀▀██", "   ▄█", "████▀"],
+  "6": [" ▄███", "█▄▄▄ ", "██  █", "█   █", " ▀██▀"],
+  "7": ["█████", "   ▄█", "  ▄█ ", " ▄█  ", " █   "],
+  "8": [" ▄█▄ ", "█   █", " ▀█▀ ", "█   █", " ▀█▀ "],
+  "9": [" ▄█▄ ", "█   █", " ▀███", "   ▄█", " ▀██▀"],
+  " ": ["    ", "    ", "    ", "    ", "    "],
+  ":": ["     ", "  █  ", "     ", "  █  ", "     "],
+  "-": ["     ", "     ", "█████", "     ", "     "],
+  "!": ["  █  ", "  █  ", "  █  ", "     ", "  █  "],
+  ".": ["     ", "     ", "     ", "     ", "  █  "]
+}
 
 GLYPHS = {
   "A": [
@@ -503,19 +584,37 @@ GLYPHS = {
 }
 
 
-sep = "  " # Exact 2 spaces uniform kerning (matching official Omarchy logo)
-lines = [""] * 8
+is_compact = (font_style == "compact")
+glyph_dict = GLYPHS_5 if is_compact else GLYPHS
+row_count = 5 if is_compact else 8
+sep = " " if is_compact else "  "
+max_len = 14 if is_compact else 7
+clean_text = text[:max_len]
 
-for ch in text:
-    glyph = GLYPHS.get(ch, GLYPHS[" "])
-    for r in range(8):
+lines = [""] * row_count
+
+for ch in clean_text:
+    glyph = glyph_dict.get(ch, glyph_dict[" "])
+    for r in range(row_count):
         lines[r] += (sep if lines[r] else "") + glyph[r]
+
+if subtitle and subtitle.strip():
+    sub_clean = subtitle.strip().upper()[:36]
+    logo_width = max(len(l) for l in lines if l)
+    lines.append("")
+    if len(sub_clean) < logo_width:
+        pad = (logo_width - len(sub_clean)) // 2
+        lines.append(" " * pad + sub_clean)
+    else:
+        lines.append(sub_clean)
 
 with open(out_file, "w", encoding="utf-8") as f:
     for line in lines:
         f.write(line.rstrip() + "\n")
 
-print(f"✓ Generated Omarchy signature screensaver text for '{text}' ({len(text)} letters, exact 2-space Omarchy kerning)")
+font_desc = "Compact 5-row" if is_compact else "Official 8-row"
+sub_desc = f" with subtitle '{subtitle.strip()}'" if subtitle.strip() else ""
+print(f"✓ Generated screensaver text for '{clean_text}' ({len(clean_text)} letters, {font_desc}{sub_desc})")
 print(f"✓ Saved to {out_file}")
 PYEOF
 }
@@ -807,7 +906,7 @@ cmd_status() {
     echo "Active screensaver: Custom branding"
     echo "File: $BRANDING_FILE"
     echo "--- Preview ---"
-    head -n 8 "$BRANDING_FILE"
+    cat "$BRANDING_FILE"
   else
     echo "Active screensaver: Default Omarchy logo ($DEFAULT_LOGO)"
   fi
