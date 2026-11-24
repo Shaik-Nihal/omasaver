@@ -3,8 +3,14 @@
 **Omasaver** is a personalization plugin and CLI tool for [Omarchy](https://omarchy.com) that lets you replace the default idle screensaver logo with your own custom text, rendered in Omarchy's signature 8-row block typography, and preview it with 24 animated effects.
 
 <p align="center">
-  <img src="assets/demo.gif" alt="Omasaver in action" width="100%">
+  <img src="assets/demo-matrix.gif" alt="Omasaver Custom Text (NIHAL) - Matrix Rain Effect" width="100%">
 </p>
+<p align="center"><em>Personalized screensaver ("NIHAL") in official 8-row block typography with Matrix digital rain</em></p>
+
+<p align="center">
+  <img src="assets/demo.gif" alt="Omasaver Official Logo (OMARCHY) - Fireworks Effect" width="100%">
+</p>
+<p align="center"><em>Official OMARCHY logo animated with the Fireworks particle effect</em></p>
 
 ---
 
