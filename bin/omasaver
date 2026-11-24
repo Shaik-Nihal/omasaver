@@ -37,19 +37,29 @@ show_help() {
 Omasaver - Custom Screensaver Branding & Effect Switcher for Omarchy
 
 Usage:
-  omasaver set "<text>"    Generate and set custom screensaver in official Omarchy font
-  omasaver reset           Revert to official Omarchy logo
-  omasaver test [effect]   Preview effect in floating terminal (default: decrypt)
-  omasaver run             Launch full-screen screensaver immediately
-  omasaver list            List all 24 available animation effects
-  omasaver status          Show current screensaver branding status
-  omasaver help            Show this help message
+  omasaver set "<text>"        Generate and set custom screensaver in official Omarchy font
+  omasaver reset               Revert to official Omarchy logo
+  omasaver test [effect]       Preview effect in floating terminal (default: decrypt)
+  omasaver run                 Launch full-screen screensaver immediately
+  omasaver list                List all 24 available animation effects
+  omasaver status              Show current screensaver branding status
+  omasaver dynamic <mode>      Activate a live dynamic screensaver mode
+  omasaver dynamic stop        Stop any running dynamic daemon
+  omasaver dynamic status      Show dynamic mode status
+  omasaver help                Show this help message
+
+Dynamic Modes:
+  omasaver dynamic clock       Live clock (updates every minute, e.g. 14:30)
+  omasaver dynamic user        Display current system username
+  omasaver dynamic host        Display current system hostname
 
 Examples:
   omasaver set "NIHAL"
   omasaver set "BUTTERFLY"
   omasaver test decrypt
   omasaver test fireworks
+  omasaver dynamic clock
+  omasaver dynamic stop
   omasaver reset
 HELP
 }
@@ -478,6 +488,16 @@ GLYPHS = {
     "         ",
     "  ▄███▄  ",
     "  ▀███▀  "
+  ],
+  ":": [
+    "         ",
+    "  ▄███▄  ",
+    "  ▀███▀  ",
+    "         ",
+    "  ▄███▄  ",
+    "  ▀███▀  ",
+    "         ",
+    "         "
   ]
 }
 
@@ -497,6 +517,187 @@ with open(out_file, "w", encoding="utf-8") as f:
 print(f"✓ Generated Omarchy signature screensaver text for '{text}' ({len(text)} letters, exact 2-space Omarchy kerning)")
 print(f"✓ Saved to {out_file}")
 PYEOF
+}
+
+DYNAMIC_PID_FILE="/tmp/omasaver-dynamic.pid"
+DYNAMIC_MODE_FILE="/tmp/omasaver-dynamic.mode"
+
+# Generate screensaver text using embedded Python glyph engine
+_generate_text() {
+  local text="$1"
+  python3 - "$text" "$BRANDING_FILE" << 'DYNPYEOF'
+import sys
+
+text = sys.argv[1].upper()[:7]
+out_file = sys.argv[2]
+
+GLYPHS = {
+  "0": [" ▄█████▄ ","███   ███","███   ███","███   ███","███   ███","███   ███","███   ███"," ▀█████▀ "],
+  "1": ["   ████  "," ▄█████  ","   ████  ","   ████  ","   ████  ","   ████  "," ▄██████▄","▀▀▀▀▀▀▀▀▀"],
+  "2": [" ▄██████▄","███▀  ▀██","      ███","   ▄▄███▀"," ▄████▀▀ ","███▀     ","█████████","▀▀▀▀▀▀▀▀▀"],
+  "3": [" ▄██████▄","███▀  ▀██","      ███","  ▄▄████▀"," ▀▀████▄ ","      ███","███▄  ▄██"," ▀██████▀"],
+  "4": ["   ▄████ ","  ██████ "," ███ ███ ","▄██  ███ ","█████████","▀▀▀  ███ ","     ███ ","    ▄███▄"],
+  "5": ["█████████","███▀▀▀▀▀▀","████████▄","▀▀▀▀▀▀▀██","      ███","███   ███","███▄ ▄███"," ▀██████▀"],
+  "6": [" ▄██████▄","███▀   ▀▀","███      ","████████▄","███▀  ███","███   ███","███▄ ▄███"," ▀██████▀"],
+  "7": ["█████████","▀▀▀▀▀▀███","     ████","    ████ ","   ████  ","  ████   ","  ████   ","  ▀███▀  "],
+  "8": [" ▄██████▄","███▀  ▀██","███▄ ▄███"," ▀██████▀"," ▄██████▄","███   ███","███▄ ▄███"," ▀██████▀"],
+  "9": [" ▄██████▄","███▀  ███","███   ███"," ▀███████","      ███","     ███ ","███▄ ▄███"," ▀██████▀"],
+  ":": ["         ","  ▄███▄  ","  ▀███▀  ","         ","  ▄███▄  ","  ▀███▀  ","         ","         "],
+  "A": [" ▄███████","███   ███","███   ███","███▄▄▄███","███▀▀▀███","███   ███","███   ███","███   █▀ "],
+  "B": [" ▄██████▄","███   ███","███   ███","████████▄","███▀▀▀███","███   ███","███   ███"," ▀██████▀"],
+  "C": [" ▄███████","███   ███","███   █▀ ","███      ","███      ","███   █▄ ","███   ███"," ▀██████▀"],
+  "D": [" ▄██████▄","███   ███","███   ███","███   ███","███   ███","███   ███","███   ███"," ▀██████▀"],
+  "E": [" ▄███████","███   ███","███   █▀ ","████████ ","███▀▀▀▀▀ ","███   █▄ ","███   ███"," ▀██████▀"],
+  "F": [" ▄███████","███   ███","███   █▀ ","████████ ","███▀▀▀▀▀ ","███      ","███      "," ▀█      "],
+  "G": [" ▄███████","███   ███","███   █▀ ","███  ▄▄▄▄","███  ▀███","███   ███","███   ███"," ▀██████▀"],
+  "H": [" ▄█   █▄ ","███   ███","███   ███","███▄▄▄███","███▀▀▀███","███   ███","███   ███"," ▀█   █▀ "],
+  "I": ["▄███████▄","▀▀▀███▀▀▀","   ███   ","   ███   ","   ███   ","   ███   ","▄▄▄███▄▄▄","▀███████▀"],
+  "J": ["    ▄████","     ████","     ████","     ████","     ████","███  ████","███  ████"," ▀█████▀ "],
+  "K": [" ▄█   ▄█ ","███  ▄█▀ ","███ ▄█▀  ","█████▀   ","███ ██▄  ","███  ▀██▄","███   ███"," ▀█   █▀ "],
+  "L": [" ▄█      ","███      ","███      ","███      ","███      ","███   ▄█ ","███▄▄▄██ "," ▀██████▀"],
+  "M": [" ▄█   ███   █▄ ","███   ███   ███","████ █████ ████","███████████████","███ █ ███ █ ███","███   ███   ███","███   ███   ███"," ▀█   ███   █▀ "],
+  "N": [" ▄█   █▄ ","███   ███","████  ███","█████ ███","███ █████","███  ████","███   ███"," ▀█   █▀ "],
+  "O": [" ▄█████▄ ","███   ███","███   ███","███   ███","███   ███","███   ███","███   ███"," ▀█████▀ "],
+  "P": [" ▄██████▄","███   ███","███   ███","████████▄","███▀▀▀▀▀▀","███      ","███      "," ▀█      "],
+  "Q": [" ▄█████▄ ","███   ███","███   ███","███   ███","███ ▄ ███","███ ▀████","███   ███"," ▀█████▀█"],
+  "R": [" ▄███████","███   ███","███   ███","████████▄","███▀▀▀▀▀ ","█████████","███   ███","███   █▀ "],
+  "S": [" ▄███████","███   ███","███   █▀ "," ▀█████▄ ","   ▀▀███▄","▄█    ███","███   ███"," ▀██████▀"],
+  "T": ["▄███████▄","▀▀▀███▀▀▀","   ███   ","   ███   ","   ███   ","   ███   ","   ███   ","   ▀█▀   "],
+  "U": [" ▄█   █▄ ","███   ███","███   ███","███   ███","███   ███","███   ███","███   ███"," ▀█████▀ "],
+  "V": [" ▄█   █▄ ","███   ███","███   ███","███   ███","███   ███","▀███▄███▀","  █████  ","   ▀█▀   "],
+  "W": [" ▄█   ███   █▄ ","███   ███   ███","███   ███   ███","███  █ █ █  ███","███ █▄█ █▄█ ███","█████ ▀███ ▀███","████   ███  ███"," ▀█     █    █▀ "],
+  "X": [" ▄█   █▄ ","███   ███"," ▀██▄██▀ ","   ███   ","   ███   "," ▄██▀██▄ ","███   ███"," ▀█   █▀ "],
+  "Y": [" ▄█   █▄ ","███   ███","███   ███","███▄▄▄███","▀▀▀▀▀▀███","▄██   ███","███   ███"," ▀█████▀ "],
+  "Z": [" ▄███████","▀▀▀▀▀███▀","   ▄██▀  ","  ███    "," ▄██▀    ","███      ","███▄▄▄▄▄▄"," ▀██████▀"],
+  " ": ["      ","      ","      ","      ","      ","      ","      ","      "],
+  "-": ["         ","         ","         ","▄███████▄","▀▀▀▀▀▀▀▀▀","         ","         ","         "],
+  "!": ["  ▄███▄  ","  █████  ","  █████  ","   ███   ","   ███   ","    ▀    ","   ███   ","   ▀█▀   "],
+  ".": ["         ","         ","         ","         ","         ","         ","  ▄███▄  ","  ▀███▀  "]
+}
+
+sep = "  "
+lines = [""] * 8
+for ch in text:
+  glyph = GLYPHS.get(ch, GLYPHS[" "])
+  for r in range(8):
+    lines[r] += (sep if lines[r] else "") + glyph[r]
+
+import os
+os.makedirs(os.path.dirname(out_file), exist_ok=True)
+with open(out_file, "w", encoding="utf-8") as f:
+  for line in lines:
+    f.write(line.rstrip() + "\n")
+DYNPYEOF
+}
+
+_clock_daemon_loop() {
+  while true; do
+    local time_str
+    time_str=$(date +"%H:%M")
+    _generate_text "$time_str" 2>/dev/null || true
+    # Sleep until next full minute
+    local secs
+    secs=$(date +%S)
+    sleep $(( 60 - 10#$secs ))
+  done
+}
+
+cmd_dynamic() {
+  local mode="${1:-}"
+
+  case "$mode" in
+    stop)
+      if [ -f "$DYNAMIC_PID_FILE" ]; then
+        local pid
+        pid=$(cat "$DYNAMIC_PID_FILE" 2>/dev/null)
+        if [ -n "$pid" ] && kill -0 "$pid" 2>/dev/null; then
+          kill "$pid" 2>/dev/null && echo "✓ Dynamic mode daemon stopped (PID: $pid)"
+        else
+          echo "✓ No running dynamic daemon found"
+        fi
+        rm -f "$DYNAMIC_PID_FILE" "$DYNAMIC_MODE_FILE"
+      else
+        echo "✓ No dynamic daemon is running"
+      fi
+      ;;
+
+    status)
+      if [ -f "$DYNAMIC_PID_FILE" ]; then
+        local pid mode_name
+        pid=$(cat "$DYNAMIC_PID_FILE" 2>/dev/null)
+        mode_name=$(cat "$DYNAMIC_MODE_FILE" 2>/dev/null || echo "unknown")
+        if [ -n "$pid" ] && kill -0 "$pid" 2>/dev/null; then
+          echo "✓ Dynamic mode active: $mode_name (PID: $pid)"
+        else
+          echo "✗ Daemon PID $pid is no longer running"
+          rm -f "$DYNAMIC_PID_FILE" "$DYNAMIC_MODE_FILE"
+        fi
+      else
+        echo "✗ No dynamic daemon running"
+      fi
+      ;;
+
+    clock)
+      # Stop any existing daemon first
+      if [ -f "$DYNAMIC_PID_FILE" ]; then
+        local old_pid
+        old_pid=$(cat "$DYNAMIC_PID_FILE" 2>/dev/null)
+        kill "$old_pid" 2>/dev/null || true
+        rm -f "$DYNAMIC_PID_FILE" "$DYNAMIC_MODE_FILE"
+      fi
+
+      mkdir -p "$BRANDING_DIR"
+
+      # Generate immediately for the current minute
+      local now
+      now=$(date +"%H:%M")
+      echo "🕐 Setting live clock screensaver: $now"
+      _generate_text "$now"
+
+      # Launch background daemon
+      ( _clock_daemon_loop ) &
+      local daemon_pid=$!
+      echo $daemon_pid > "$DYNAMIC_PID_FILE"
+      echo "clock" > "$DYNAMIC_MODE_FILE"
+
+      echo "✓ Live clock daemon started (PID: $daemon_pid)"
+      echo "  Clock will update every minute. Run 'omasaver dynamic stop' to disable."
+      ;;
+
+    user)
+      local uname
+      uname=$(echo "${USER:-$(id -un)}" | tr '[:lower:]' '[:upper:]' | cut -c1-7)
+      echo "👤 Setting screensaver to username: $uname"
+      cmd_set "$uname"
+      ;;
+
+    host)
+      local hname
+      hname=$(hostname 2>/dev/null | cut -d'.' -f1 | tr '[:lower:]' '[:upper:]' | cut -c1-7)
+      if [ -z "$hname" ]; then
+        hname=$(cat /etc/hostname 2>/dev/null | cut -c1-7 | tr '[:lower:]' '[:upper:]')
+      fi
+      echo "🖥️  Setting screensaver to hostname: $hname"
+      cmd_set "$hname"
+      ;;
+
+    ""|--help|-h)
+      echo "Usage: omasaver dynamic <mode>"
+      echo ""
+      echo "Modes:"
+      echo "  clock     Live clock (updates every minute, e.g. 14:30)"
+      echo "  user      Display current system username"
+      echo "  host      Display current system hostname"
+      echo "  stop      Stop any running dynamic daemon"
+      echo "  status    Show dynamic mode status"
+      ;;
+
+    *)
+      echo "Unknown dynamic mode: $mode" >&2
+      echo "Available modes: clock, user, host, stop, status" >&2
+      exit 1
+      ;;
+  esac
 }
 
 cmd_reset() {
@@ -635,6 +836,10 @@ case "${1:-help}" in
     ;;
   status)
     cmd_status
+    ;;
+  dynamic)
+    shift
+    cmd_dynamic "$@"
     ;;
   help|--help|-h)
     show_help

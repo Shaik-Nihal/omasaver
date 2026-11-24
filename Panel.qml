@@ -20,6 +20,7 @@ Panel {
   property string currentEffect: "matrix"
   property string previewText: Model.generateAscii(inputText)
   property bool isCustomActive: false
+  property string dynamicMode: "off"
 
   function open() {
     root.controller.show()
@@ -54,7 +55,8 @@ Panel {
     root.inputText = "OMARCHY"
     root.previewText = Model.generateAscii("OMARCHY")
     if (root.bar) {
-      root.bar.run("omasaver reset")
+      root.bar.run("omasaver dynamic stop ; omasaver reset")
+      root.dynamicMode = "off"
       Qt.callLater(function() { brandingFile.reload() })
     }
   }
@@ -183,6 +185,116 @@ Panel {
               accent: Commons.Color.accent
               onClicked: root.applyCustomText()
             }
+          }
+        }
+
+        PanelSeparator { width: parent.width }
+
+        // Section: Dynamic Mode
+        Column {
+          width: parent.width
+          spacing: Style.space(6)
+
+          Text {
+            text: "⏱ Dynamic Mode:"
+            color: root.barForeground
+            font.family: Style.font.family
+            font.pixelSize: Style.font.caption
+            font.bold: true
+          }
+
+          Text {
+            text: "Live Clock, Username, or Hostname — updates automatically"
+            color: Qt.rgba(1, 1, 1, 0.5)
+            font.family: Style.font.family
+            font.pixelSize: Style.font.caption
+            wrapMode: Text.WordWrap
+            width: parent.width
+          }
+
+          Row {
+            width: parent.width
+            spacing: Style.space(8)
+
+            Button {
+              text: "🕐 Clock"
+              width: (parent.width - Style.space(24)) / 4
+              bordered: true
+              accent: root.dynamicMode === "clock" ? Commons.Color.accent : undefined
+              tooltipText: "Live clock (updates every minute)"
+              onClicked: {
+                root.dynamicMode = "clock"
+                if (root.bar) {
+                  root.bar.run("omasaver dynamic clock")
+                  Qt.callLater(function() {
+                    brandingFile.reload()
+                    var t = new Date()
+                    var h = String(t.getHours()).padStart(2, "0")
+                    var m = String(t.getMinutes()).padStart(2, "0")
+                    root.previewText = Model.generateAscii(h + ":" + m)
+                  })
+                }
+              }
+            }
+
+            Button {
+              text: "👤 User"
+              width: (parent.width - Style.space(24)) / 4
+              bordered: true
+              accent: root.dynamicMode === "user" ? Commons.Color.accent : undefined
+              tooltipText: "Display system username"
+              onClicked: {
+                root.dynamicMode = "user"
+                if (root.bar) {
+                  root.bar.run("omasaver dynamic stop ; omasaver dynamic user")
+                  Qt.callLater(function() { brandingFile.reload() })
+                }
+              }
+            }
+
+            Button {
+              text: "🖥 Host"
+              width: (parent.width - Style.space(24)) / 4
+              bordered: true
+              accent: root.dynamicMode === "host" ? Commons.Color.accent : undefined
+              tooltipText: "Display system hostname"
+              onClicked: {
+                root.dynamicMode = "host"
+                if (root.bar) {
+                  root.bar.run("omasaver dynamic stop ; omasaver dynamic host")
+                  Qt.callLater(function() { brandingFile.reload() })
+                }
+              }
+            }
+
+            Button {
+              text: "✕ Stop"
+              width: (parent.width - Style.space(24)) / 4
+              bordered: true
+              tooltipText: "Stop live dynamic mode"
+              onClicked: {
+                root.dynamicMode = "off"
+                if (root.bar) {
+                  root.bar.run("omasaver dynamic stop")
+                }
+              }
+            }
+          }
+
+          // Dynamic status indicator
+          Text {
+            visible: root.dynamicMode !== "off"
+            text: {
+              if (root.dynamicMode === "clock") return "● Live Clock active — screensaver updates every minute"
+              if (root.dynamicMode === "user")  return "● Username mode active"
+              if (root.dynamicMode === "host")  return "● Hostname mode active"
+              return ""
+            }
+            color: Commons.Color.accent
+            font.family: Style.font.family
+            font.pixelSize: Style.font.caption
+            wrapMode: Text.WordWrap
+            width: parent.width
           }
         }
 
