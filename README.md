@@ -2,6 +2,10 @@
 
 **Omasaver** is a personalization plugin and CLI tool for [Omarchy](https://omarchy.com) that lets you replace the default idle screensaver logo with your own custom text, rendered in Omarchy's signature 8-row block typography, and preview it with 24 animated effects.
 
+<p align="center">
+  <img src="assets/demo.gif" alt="Omasaver in action" width="100%">
+</p>
+
 ---
 
 ## Table of Contents
