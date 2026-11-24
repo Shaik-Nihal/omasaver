@@ -65,6 +65,7 @@ HELP
 }
 
 cmd_set() {
+  _stop_dynamic_daemon
   local text="${1:-}"
   if [ -z "$text" ]; then
     echo "Error: Please provide text to set (1-7 characters), e.g.: omasaver set \"NIHAL\"" >&2
@@ -522,6 +523,17 @@ PYEOF
 DYNAMIC_PID_FILE="/tmp/omasaver-dynamic.pid"
 DYNAMIC_MODE_FILE="/tmp/omasaver-dynamic.mode"
 
+_stop_dynamic_daemon() {
+  if [ -f "$DYNAMIC_PID_FILE" ]; then
+    local pid
+    pid=$(cat "$DYNAMIC_PID_FILE" 2>/dev/null)
+    if [ -n "$pid" ] && kill -0 "$pid" 2>/dev/null; then
+      kill "$pid" 2>/dev/null || true
+    fi
+    rm -f "$DYNAMIC_PID_FILE" "$DYNAMIC_MODE_FILE"
+  fi
+}
+
 # Generate screensaver text using embedded Python glyph engine
 _generate_text() {
   local text="$1"
@@ -607,18 +619,8 @@ cmd_dynamic() {
 
   case "$mode" in
     stop)
-      if [ -f "$DYNAMIC_PID_FILE" ]; then
-        local pid
-        pid=$(cat "$DYNAMIC_PID_FILE" 2>/dev/null)
-        if [ -n "$pid" ] && kill -0 "$pid" 2>/dev/null; then
-          kill "$pid" 2>/dev/null && echo "✓ Dynamic mode daemon stopped (PID: $pid)"
-        else
-          echo "✓ No running dynamic daemon found"
-        fi
-        rm -f "$DYNAMIC_PID_FILE" "$DYNAMIC_MODE_FILE"
-      else
-        echo "✓ No dynamic daemon is running"
-      fi
+      _stop_dynamic_daemon
+      echo "✓ Dynamic mode daemon stopped"
       ;;
 
     status)
@@ -638,14 +640,7 @@ cmd_dynamic() {
       ;;
 
     clock)
-      # Stop any existing daemon first
-      if [ -f "$DYNAMIC_PID_FILE" ]; then
-        local old_pid
-        old_pid=$(cat "$DYNAMIC_PID_FILE" 2>/dev/null)
-        kill "$old_pid" 2>/dev/null || true
-        rm -f "$DYNAMIC_PID_FILE" "$DYNAMIC_MODE_FILE"
-      fi
-
+      _stop_dynamic_daemon
       mkdir -p "$BRANDING_DIR"
 
       # Generate immediately for the current minute
@@ -665,6 +660,7 @@ cmd_dynamic() {
       ;;
 
     user)
+      _stop_dynamic_daemon
       local uname
       uname=$(echo "${USER:-$(id -un)}" | tr '[:lower:]' '[:upper:]' | cut -c1-7)
       echo "👤 Setting screensaver to username: $uname"
@@ -672,6 +668,7 @@ cmd_dynamic() {
       ;;
 
     host)
+      _stop_dynamic_daemon
       local hname
       hname=$(hostname 2>/dev/null | cut -d'.' -f1 | tr '[:lower:]' '[:upper:]' | cut -c1-7)
       if [ -z "$hname" ]; then
@@ -701,6 +698,7 @@ cmd_dynamic() {
 }
 
 cmd_reset() {
+  _stop_dynamic_daemon
   if [ -f "$DEFAULT_LOGO" ]; then
     mkdir -p "$BRANDING_DIR"
     cp "$DEFAULT_LOGO" "$BRANDING_FILE"

@@ -48,18 +48,16 @@ Panel {
     root.dynamicMode = "off"
     root.previewText = Model.generateAscii(txt)
     if (root.bar) {
-      root.bar.run("omasaver dynamic stop ; omasaver set " + Commons.Util.shellQuote(txt))
-      Qt.callLater(function() { brandingFile.reload() })
+      root.bar.run("omasaver set " + Commons.Util.shellQuote(txt))
     }
   }
 
   function resetToDefault() {
+    root.dynamicMode = "off"
     root.inputText = "OMARCHY"
     root.previewText = Model.generateAscii("OMARCHY")
     if (root.bar) {
-      root.bar.run("omasaver dynamic stop ; omasaver reset")
-      root.dynamicMode = "off"
-      Qt.callLater(function() { brandingFile.reload() })
+      root.bar.run("omasaver reset")
     }
   }
 
@@ -113,15 +111,6 @@ Panel {
     printErrors: false
     onLoaded: {
       root.isCustomActive = true
-      if (text()) {
-        root.previewText = text()
-      }
-    }
-    onFileChanged: {
-      reload()
-      if (text()) {
-        root.previewText = text()
-      }
     }
     onLoadFailed: {
       root.isCustomActive = false
@@ -204,13 +193,11 @@ Panel {
               text: root.inputText
               maximumLength: 7
               placeholderText: "1-7 chars (e.g. NIHAL, OMARCHY)"
-              onTextChanged: {
+              onTextEdited: {
+                root.dynamicMode = "off"
                 var clean = text.toUpperCase().slice(0, 7)
-                if (text !== clean) {
-                  text = clean
-                }
-                root.inputText = text
-                root.previewText = Model.generateAscii(text)
+                root.inputText = clean
+                root.previewText = Model.generateAscii(clean)
               }
               onAccepted: root.applyCustomText()
             }
@@ -270,7 +257,6 @@ Panel {
                 root.previewText = Model.generateAscii(timeStr)
                 if (root.bar) {
                   root.bar.run("omasaver dynamic clock")
-                  Qt.callLater(function() { brandingFile.reload() })
                 }
               }
             }
@@ -288,8 +274,7 @@ Panel {
                 root.inputText = uname
                 root.previewText = Model.generateAscii(uname)
                 if (root.bar) {
-                  root.bar.run("omasaver dynamic stop ; omasaver dynamic user")
-                  Qt.callLater(function() { brandingFile.reload() })
+                  root.bar.run("omasaver dynamic user")
                 }
               }
             }
@@ -307,8 +292,7 @@ Panel {
                 root.inputText = h
                 root.previewText = Model.generateAscii(h)
                 if (root.bar) {
-                  root.bar.run("omasaver dynamic stop ; omasaver dynamic host")
-                  Qt.callLater(function() { brandingFile.reload() })
+                  root.bar.run("omasaver dynamic host")
                 }
               }
             }
