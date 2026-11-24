@@ -980,8 +980,11 @@ RUNNER_EOF
 }
 
 cmd_run() {
-  local effect="${1:-random}"
-  cmd_test "$effect"
+  if command -v omarchy-launch-screensaver >/dev/null 2>&1; then
+    omarchy-launch-screensaver force
+  else
+    omarchy launch screensaver
+  fi
 }
 
 cmd_list() {
