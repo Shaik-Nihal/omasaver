@@ -89,7 +89,7 @@ Panel {
     bar: root.bar
     open: root.opened
     focusTarget: keyCatcher
-    contentWidth: panel.fittedContentWidth(Style.space(420))
+    contentWidth: panel.fittedContentWidth(Style.space(520))
     contentHeight: panel.fittedContentHeight(mainColumn.implicitHeight)
 
     PanelKeyCatcher {
@@ -167,7 +167,7 @@ Panel {
           spacing: Style.space(4)
 
           Text {
-            text: "Live Signature Preview (8-Row Omarchy Font, 3-Space Gap):"
+            text: "Live Signature Preview (Official Omarchy Font):"
             color: root.barForeground
             font.family: Style.font.family
             font.pixelSize: Style.font.caption
@@ -175,6 +175,7 @@ Panel {
           }
 
           Rectangle {
+            id: previewBox
             width: parent.width
             implicitHeight: previewFlick.implicitHeight + Style.space(16)
             color: Qt.rgba(0, 0, 0, 0.45)
@@ -182,22 +183,36 @@ Panel {
             border.width: 1
             radius: Style.cornerRadius
 
+            readonly property int previewCols: root.previewText ? (root.previewText.split("\n")[0] || "").length : 0
+            readonly property real autoFontSize: {
+              if (previewCols <= 0) return Style.space(9)
+              var avail = previewBox.width - Style.space(24)
+              var needed = avail / (previewCols * 0.61)
+              return Math.max(5.0, Math.min(Style.space(9), Math.floor(needed * 10) / 10))
+            }
+
             Flickable {
               id: previewFlick
               anchors.fill: parent
               anchors.margins: Style.space(8)
-              implicitHeight: previewTextItem.implicitHeight
-              contentWidth: previewTextItem.implicitWidth
+              implicitHeight: previewTextItem.implicitHeight + (scrollBarH.visible ? scrollBarH.height : 0)
+              contentWidth: Math.max(width, previewTextItem.implicitWidth)
               contentHeight: previewTextItem.implicitHeight
               clip: true
               boundsBehavior: Flickable.StopAtBounds
+              flickableDirection: Flickable.HorizontalAndVerticalFlick
+
+              ScrollBar.horizontal: ScrollBar {
+                id: scrollBarH
+                policy: previewTextItem.implicitWidth > previewFlick.width ? ScrollBar.AlwaysOn : ScrollBar.AsNeeded
+              }
 
               Text {
                 id: previewTextItem
                 text: root.previewText || "TYPE TEXT ABOVE TO PREVIEW"
                 color: Commons.Color.accent
                 font.family: "JetBrainsMono Nerd Font, monospace"
-                font.pixelSize: Style.space(9)
+                font.pixelSize: previewBox.autoFontSize
                 lineHeight: 0.95
               }
             }
