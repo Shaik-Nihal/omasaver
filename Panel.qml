@@ -306,8 +306,8 @@ Panel {
 
               Text {
                 id: subCounter
-                text: root.subtitleText.length + " / 36 max"
-                color: Qt.rgba(1, 1, 1, 0.45)
+                text: root.subtitleText.length + " / 20 max"
+                color: root.subtitleText.length >= 20 ? Commons.Color.accent : Qt.rgba(1, 1, 1, 0.45)
                 font.family: Style.font.family
                 font.pixelSize: Style.font.caption
               }
@@ -317,10 +317,10 @@ Panel {
               id: subtitleField
               width: parent.width
               text: root.subtitleText
-              maximumLength: 36
-              placeholderText: "e.g. SOFTWARE ENGINEER, ARCH LINUX, DO NOT TOUCH"
+              maximumLength: 20
+              placeholderText: "e.g. DO NOT TOUCH, ARCH LINUX, DEV"
               onTextEdited: {
-                root.subtitleText = text.toUpperCase().slice(0, 36)
+                root.subtitleText = text.toUpperCase().slice(0, 20)
                 root.updatePreview()
               }
               onAccepted: root.applyCustomText()

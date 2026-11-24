@@ -459,6 +459,51 @@ var GLYPHS_COMPACT = {
   ".": ["     ", "     ", "     ", "     ", "  █  "]
 };
 
+var GLYPHS_MICRO = {
+  "A": ["▄█▄", "█▀█", "▀ ▀"],
+  "B": ["█▀▄", "█▀▄", "▀▀ "],
+  "C": ["▄▀▀", "█  ", " ▀▀"],
+  "D": ["█▀▄", "█ █", "▀▀ "],
+  "E": ["█▀▀", "█▀ ", "▀▀▀"],
+  "F": ["█▀▀", "█▀ ", "▀  "],
+  "G": ["▄▀▀", "█ ▄", " ▀▀"],
+  "H": ["█ █", "█▀█", "▀ ▀"],
+  "I": ["▀█▀", " █ ", "▀▀▀"],
+  "J": ["  █", "  █", "▀▀ "],
+  "K": ["█ ▄", "█▀ ", "▀ ▀"],
+  "L": ["█  ", "█  ", "▀▀▀"],
+  "M": ["█▄█", "█ █", "▀ ▀"],
+  "N": ["█▀▄", "█ █", "▀ ▀"],
+  "O": ["▄▀▄", "█ █", " ▀ "],
+  "P": ["█▀▄", "█▀ ", "▀  "],
+  "Q": ["▄▀▄", "█ █", " ▀▄"],
+  "R": ["█▀▄", "█▀▄", "▀ ▀"],
+  "S": ["▄▀▀", " ▀▄", "▀▀ "],
+  "T": ["▀█▀", " █ ", " ▀ "],
+  "U": ["█ █", "█ █", " ▀ "],
+  "V": ["█ █", "█ █", " ▀ "],
+  "W": ["█ █", "█▀█", "▀ ▀"],
+  "X": ["▀▄▀", " █ ", "▄▀▄"],
+  "Y": ["█ █", " █ ", " ▀ "],
+  "Z": ["▀▀█", " ▄▀", "█▀▀"],
+  "0": ["▄▀▄", "█ █", "▀▄▀"],
+  "1": ["▄█ ", " █ ", "▀▀▀"],
+  "2": ["▀▀█", "▄█▀", "███"],
+  "3": ["▀▀█", " ▀█", "▀▀▀"],
+  "4": ["█ █", "▀██", "  ▀"],
+  "5": ["█▀▀", "▀▀▄", "▀▀▀"],
+  "6": ["▄▀▀", "█▀▄", "▀▀▀"],
+  "7": ["▀▀█", "  █", "  ▀"],
+  "8": ["▄█▄", "█▀█", "▀▀▀"],
+  "9": ["▄█▄", "▀▀█", "  ▀"],
+  " ": ["  ", "  ", "  "],
+  "-": ["   ", "▀▀▀", "   "],
+  ".": [" ", " ", "▀"],
+  "!": ["█", "█", "▀"],
+  ":": [" ", "▀", "▀"],
+  "/": ["  █", " █ ", "█  "]
+};
+
 var sep = "  "; // Exact 2 spaces uniform kerning (matching official Omarchy logo)
 
 function generateAscii(text, fontStyle, subtitle) {
@@ -485,19 +530,30 @@ function generateAscii(text, fontStyle, subtitle) {
   }
 
   if (subtitle && subtitle.trim().length > 0) {
-    var sub = subtitle.trim().toUpperCase().slice(0, 36);
+    var sub = subtitle.trim().toUpperCase().slice(0, 20);
     var logoWidth = 0;
     for (var j = 0; j < lines.length; j++) {
       if (lines[j].length > logoWidth) logoWidth = lines[j].length;
     }
+
+    var subLines = ["", "", ""];
+    var subSep = " ";
+    for (var s = 0; s < sub.length; s++) {
+      var sch = sub.charAt(s);
+      var sglyph = GLYPHS_MICRO[sch] || GLYPHS_MICRO[" "];
+      for (var sr = 0; sr < 3; sr++) {
+        subLines[sr] += (subLines[sr].length > 0 ? subSep : "") + sglyph[sr];
+      }
+    }
+
+    var subWidth = subLines[0].length;
+    var pad = Math.max(0, Math.floor((logoWidth - subWidth) / 2));
+    var padStr = "";
+    for (var p = 0; p < pad; p++) padStr += " ";
+
     lines.push(""); // empty spacing row between logo and subtitle
-    if (sub.length < logoWidth) {
-      var pad = Math.floor((logoWidth - sub.length) / 2);
-      var padStr = "";
-      for (var p = 0; p < pad; p++) padStr += " ";
-      lines.push(padStr + sub);
-    } else {
-      lines.push(sub);
+    for (var sr = 0; sr < 3; sr++) {
+      lines.push(padStr + subLines[sr]);
     }
   }
 

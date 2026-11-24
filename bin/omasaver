@@ -583,6 +583,50 @@ GLYPHS = {
   ]
 }
 
+GLYPHS_MICRO = {
+  "A": ["▄█▄", "█▀█", "▀ ▀"],
+  "B": ["█▀▄", "█▀▄", "▀▀ "],
+  "C": ["▄▀▀", "█  ", " ▀▀"],
+  "D": ["█▀▄", "█ █", "▀▀ "],
+  "E": ["█▀▀", "█▀ ", "▀▀▀"],
+  "F": ["█▀▀", "█▀ ", "▀  "],
+  "G": ["▄▀▀", "█ ▄", " ▀▀"],
+  "H": ["█ █", "█▀█", "▀ ▀"],
+  "I": ["▀█▀", " █ ", "▀▀▀"],
+  "J": ["  █", "  █", "▀▀ "],
+  "K": ["█ ▄", "█▀ ", "▀ ▀"],
+  "L": ["█  ", "█  ", "▀▀▀"],
+  "M": ["█▄█", "█ █", "▀ ▀"],
+  "N": ["█▀▄", "█ █", "▀ ▀"],
+  "O": ["▄▀▄", "█ █", " ▀ "],
+  "P": ["█▀▄", "█▀ ", "▀  "],
+  "Q": ["▄▀▄", "█ █", " ▀▄"],
+  "R": ["█▀▄", "█▀▄", "▀ ▀"],
+  "S": ["▄▀▀", " ▀▄", "▀▀ "],
+  "T": ["▀█▀", " █ ", " ▀ "],
+  "U": ["█ █", "█ █", " ▀ "],
+  "V": ["█ █", "█ █", " ▀ "],
+  "W": ["█ █", "█▀█", "▀ ▀"],
+  "X": ["▀▄▀", " █ ", "▄▀▄"],
+  "Y": ["█ █", " █ ", " ▀ "],
+  "Z": ["▀▀█", " ▄▀", "█▀▀"],
+  "0": ["▄▀▄", "█ █", "▀▄▀"],
+  "1": ["▄█ ", " █ ", "▀▀▀"],
+  "2": ["▀▀█", "▄█▀", "███"],
+  "3": ["▀▀█", " ▀█", "▀▀▀"],
+  "4": ["█ █", "▀██", "  ▀"],
+  "5": ["█▀▀", "▀▀▄", "▀▀▀"],
+  "6": ["▄▀▀", "█▀▄", "▀▀▀"],
+  "7": ["▀▀█", "  █", "  ▀"],
+  "8": ["▄█▄", "█▀█", "▀▀▀"],
+  "9": ["▄█▄", "▀▀█", "  ▀"],
+  " ": ["  ", "  ", "  "],
+  "-": ["   ", "▀▀▀", "   "],
+  ".": [" ", " ", "▀"],
+  "!": ["█", "█", "▀"],
+  ":": [" ", "▀", "▀"],
+  "/": ["  █", " █ ", "█  "]
+}
 
 is_compact = (font_style == "compact")
 glyph_dict = GLYPHS_5 if is_compact else GLYPHS
@@ -599,14 +643,20 @@ for ch in clean_text:
         lines[r] += (sep if lines[r] else "") + glyph[r]
 
 if subtitle and subtitle.strip():
-    sub_clean = subtitle.strip().upper()[:36]
+    sub_clean = subtitle.strip().upper()[:20]
     logo_width = max(len(l) for l in lines if l)
-    lines.append("")
-    if len(sub_clean) < logo_width:
-        pad = (logo_width - len(sub_clean)) // 2
-        lines.append(" " * pad + sub_clean)
-    else:
-        lines.append(sub_clean)
+    
+    sub_lines = ["", "", ""]
+    for ch in sub_clean:
+        sg = GLYPHS_MICRO.get(ch, GLYPHS_MICRO[" "])
+        for sr in range(3):
+            sub_lines[sr] += (" " if sub_lines[sr] else "") + sg[sr]
+            
+    sub_w = len(sub_lines[0])
+    pad = max(0, (logo_width - sub_w) // 2)
+    lines.append("") # spacer
+    for sr in range(3):
+        lines.append(" " * pad + sub_lines[sr])
 
 with open(out_file, "w", encoding="utf-8") as f:
     for line in lines:
