@@ -1,0 +1,212 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+BRANDING_DIR="${HOME}/.config/omarchy/branding"
+BRANDING_FILE="${BRANDING_DIR}/screensaver.txt"
+DEFAULT_LOGO="/usr/share/omarchy/logo.txt"
+
+EFFECTS=(
+  "matrix:Matrix digital rain code"
+  "decrypt:Movie-style decryption scramble"
+  "fireworks:Exploding colorful fireworks"
+  "rain:Falling rain drops settling into place"
+  "beams:Sweeping searchlight beams"
+  "bubbles:Floating soap bubbles that pop"
+  "burn:Vertical flame wall burning down"
+  "laseretch:High-precision laser engraving"
+  "scattered:Flying scattered characters"
+  "crumble:Crumbling dust and reformation"
+  "blackhole:Singularity collapse and outward burst"
+  "bouncyballs:Bouncing rubber balls"
+  "colorshift:Chromatic RGB gradient shift"
+  "slice:Horizontal sliding slices"
+  "rings:Orbital spinning rings"
+  "overflow:Buffer overflow rolling glitch"
+  "orbittingvolley:Orbiting corner turret volleys"
+  "pour:Liquid characters pouring from above"
+  "binarypath:Streaming binary 0s and 1s"
+  "errorcorrect:Glitch repair in sequence"
+  "expand:Explosion outward from center"
+  "middleout:Expansion from center row and column"
+  "print:Mechanical vintage typewriter"
+  "highlight:Specular light gleam"
+)
+
+show_help() {
+  cat << 'HELP'
+Omasaver - Custom Screensaver Branding & Effect Switcher for Omarchy
+
+Usage:
+  omasaver set "<text>"    Generate and set custom screensaver text
+  omasaver reset           Revert to official Omarchy logo
+  omasaver test [effect]   Preview effect in floating terminal (default: matrix)
+  omasaver run             Launch full-screen screensaver immediately
+  omasaver list            List all 24 available animation effects
+  omasaver status          Show current screensaver branding status
+  omasaver help            Show this help message
+
+Examples:
+  omasaver set "NIHAL"
+  omasaver test matrix
+  omasaver test fireworks
+  omasaver reset
+HELP
+}
+
+cmd_set() {
+  local text="${1:-}"
+  if [ -z "$text" ]; then
+    echo "Error: Please provide text to set, e.g.: omasaver set \"NIHAL\"" >&2
+    exit 1
+  fi
+
+  mkdir -p "$BRANDING_DIR"
+
+  python3 - "$text" "$BRANDING_FILE" << 'PYEOF'
+import sys
+
+text = sys.argv[1].upper()
+out_file = sys.argv[2]
+
+GLYPHS = {
+  "A": [" ▄███████ ", "███   ███ ", "███   ███ ", "███▄▄▄███ ", "███▀▀▀███ ", "███   ███ ", "███   ███ ", "███   █▀  "],
+  "B": ["████████▄ ", "███   ███ ", "███   ███ ", "████████▄ ", "███▀▀▀███ ", "███   ███ ", "███   ███ ", "████████▀ "],
+  "C": [" ▄███████ ", "███   ███ ", "███   █▀  ", "███       ", "███       ", "███   █▄  ", "███   ███ ", " ▀██████▀ "],
+  "D": ["████████▄ ", "███   ███ ", "███   ███ ", "███   ███ ", "███   ███ ", "███   ███ ", "███   ███ ", "████████▀ "],
+  "E": ["█████████ ", "███       ", "███       ", "█████████ ", "███▀▀▀▀▀▀ ", "███       ", "███       ", "█████████ "],
+  "F": ["█████████ ", "███       ", "███       ", "█████████ ", "███▀▀▀▀▀▀ ", "███       ", "███       ", "███       "],
+  "G": [" ▄███████ ", "███   ███ ", "███   █▀  ", "███  ▄▄▄▄ ", "███  ▀███ ", "███   ███ ", "███   ███ ", " ▀██████▀ "],
+  "H": [" ▄█   █▄  ", "███   ███ ", "███   ███ ", "███▄▄▄███ ", "███▀▀▀███ ", "███   ███ ", "███   ███ ", " ▀█   █▀  "],
+  "I": ["███████ ", "▀▀███▀▀ ", "  ███   ", "  ███   ", "  ███   ", "  ███   ", "▄▄███▄▄ ", "███████ "],
+  "J": ["   ▄███ ", "    ███ ", "    ███ ", "    ███ ", "    ███ ", "███ ███ ", "███████ ", " ▀████▀ "],
+  "K": ["███   ▄█ ", "███  ▄█▀ ", "███ ▄█▀  ", "█████▀   ", "███ ██▄  ", "███  ▀██▄", "███   ███", "███   █▀ "],
+  "L": ["▄█       ", "███      ", "███      ", "███      ", "███      ", "███   ▄█ ", "███▄▄▄██ ", "▀██████▀ "],
+  "M": [" ▄█     █▄", "████   ███", "█████ ▄███", "███ █▄█ ██", "███  ▀  ██", "███     ██", "███     ██", " ▀█     █▀"],
+  "N": [" ▄█   █▄  ", "███   ███ ", "████  ███ ", "█████ ███ ", "███ █████ ", "███  ████ ", "███   ███ ", " ▀█   █▀  "],
+  "O": [" ▄███████▄", "███     ██", "███     ██", "███     ██", "███     ██", "███     ██", "███     ██", " ▀███████▀"],
+  "P": ["████████▄ ", "███   ███ ", "███   ███ ", "████████▀ ", "███▀▀▀▀   ", "███       ", "███       ", "███       "],
+  "Q": [" ▄███████▄", "███     ██", "███     ██", "███     ██", "███     ██", "███  █▄ ██", "███  ▀████", " ▀███████▀"],
+  "R": ["████████▄ ", "███   ███ ", "███   ███ ", "████████▄ ", "███▀▀▀███ ", "███   ███ ", "███   ███ ", "███   █▀  "],
+  "S": [" ▄███████ ", "███   ███ ", "███   █▀  ", " ▀█████▄  ", "   ▀▀███▄ ", "▄█    ███ ", "███   ███ ", " ▀██████▀ "],
+  "T": ["█████████ ", "▀▀▀███▀▀▀ ", "   ███    ", "   ███    ", "   ███    ", "   ███    ", "   ███    ", "   ███    "],
+  "U": [" ▄█   █▄  ", "███   ███ ", "███   ███ ", "███   ███ ", "███   ███ ", "███   ███ ", "███   ███ ", " ▀█████▀  "],
+  "V": [" ▄█   █▄  ", "███   ███ ", "███   ███ ", "███   ███ ", "███   ███ ", "▀███▄███▀ ", "  █████   ", "   ▀█▀    "],
+  "W": [" ▄█     █▄", "███     ██", "███     ██", "███  █  ██", "███ █▄█ ██", "█████ ▀███", "████   ███", " ▀█     █▀"],
+  "X": [" ▄█   █▄  ", "███   ███ ", " ▀██▄██▀  ", "   ███    ", "   ███    ", " ▄██▀██▄  ", "███   ███ ", " ▀█   █▀  "],
+  "Y": [" ▄█   █▄  ", "███   ███ ", "███   ███ ", " ▀█████▀  ", "   ███    ", "   ███    ", "   ███    ", "   ███    "],
+  "Z": ["█████████ ", "▀▀▀▀▀███▀ ", "   ▄██▀   ", "  ███     ", " ▄██▀     ", "███       ", "█████████ ", "▀▀▀▀▀▀▀▀▀ "],
+  "0": [" ▄███████▄", "███     ██", "███ ▄█▄ ██", "███ █▀█ ██", "███     ██", "███     ██", " ▀███████▀", "          "],
+  "1": ["  ▄███  ", " ▄████  ", "   ███  ", "   ███  ", "   ███  ", "   ███  ", " ▄▄███▄▄", " ███████"],
+  "2": [" ▄███████ ", "███   ███ ", "      ███ ", " ▄██████▀ ", "███▀▀▀▀   ", "███       ", "█████████ ", "▀▀▀▀▀▀▀▀▀ "],
+  "3": [" ▄███████ ", "███   ███ ", "      ███ ", "  ▄█████▀ ", "    ▀▀███ ", "███   ███ ", "███   ███ ", " ▀██████▀ "],
+  "4": ["███   ███ ", "███   ███ ", "███   ███ ", "█████████ ", "▀▀▀▀▀▀███ ", "      ███ ", "      ███ ", "      ▀█▀ "],
+  "5": ["█████████ ", "███       ", "████████▄ ", "▀▀▀▀▀▀███ ", "      ███ ", "███   ███ ", "███   ███ ", " ▀██████▀ "],
+  "6": [" ▄███████ ", "███   ███ ", "███       ", "████████▄ ", "███▀▀▀███ ", "███   ███ ", "███   ███ ", " ▀██████▀ "],
+  "7": ["█████████ ", "▀▀▀▀▀▀███ ", "     ███  ", "    ███   ", "   ███    ", "   ███    ", "   ███    ", "   ▀█▀    "],
+  "8": [" ▄███████ ", "███   ███ ", "███   ███ ", " ▀██████▄ ", " ▄██████▀ ", "███   ███ ", "███   ███ ", " ▀██████▀ "],
+  "9": [" ▄███████ ", "███   ███ ", "███   ███ ", " ▀███████ ", "      ███ ", "      ███ ", "███   ███ ", " ▀██████▀ "],
+  " ": ["      ", "      ", "      ", "      ", "      ", "      ", "      ", "      "],
+  "-": ["       ", "       ", "       ", "███████", "▀▀▀▀▀▀▀", "       ", "       ", "       "],
+  "!": [" ███ ", " ███ ", " ███ ", " ███ ", " ███ ", "  ▀  ", " ███ ", " ▀█▀ "],
+  ".": ["     ", "     ", "     ", "     ", "     ", "     ", "████ ", "▀██▀ "]
+}
+
+sep = "   " # 3 spaces uniform kerning
+lines = ["" for _ in range(8)]
+
+for char in text:
+    glyph = GLYPHS.get(char, GLYPHS[" "])
+    for row in range(8):
+        lines[row] += (sep if lines[row] else "") + glyph[row]
+
+with open(out_file, "w") as f:
+    for line in lines:
+        f.write(line.rstrip() + "\n")
+
+print(f"✓ Generated Omarchy block screensaver text for '{text}'")
+print(f"✓ Saved to {out_file}")
+PYEOF
+}
+
+cmd_reset() {
+  if [ -f "$DEFAULT_LOGO" ]; then
+    mkdir -p "$BRANDING_DIR"
+    cp "$DEFAULT_LOGO" "$BRANDING_FILE"
+    echo "✓ Restored official Omarchy logo to screensaver"
+  else
+    rm -f "$BRANDING_FILE"
+    echo "✓ Removed custom branding; screensaver will use system default"
+  fi
+}
+
+cmd_test() {
+  local effect="${1:-matrix}"
+  local target_file="$BRANDING_FILE"
+  if [ ! -f "$target_file" ]; then
+    target_file="$DEFAULT_LOGO"
+  fi
+
+  echo "Testing screensaver effect: '$effect'..."
+  if command -v hyprctl >/dev/null 2>&1 && [ -n "${HYPRLAND_INSTANCE_SIGNATURE:-}" ]; then
+    hyprctl dispatch "hl.dsp.exec_cmd('foot --app-id=TUI.float bash -c \"ttfx -i \\\"$target_file\\\" $effect ; sleep 4\"')" >/dev/null 2>&1 || \
+      ttfx -i "$target_file" "$effect"
+  else
+    ttfx -i "$target_file" "$effect"
+  fi
+}
+
+cmd_run() {
+  omarchy launch screensaver
+}
+
+cmd_list() {
+  echo "Available Screensaver Effects in ttfx:"
+  echo "======================================"
+  for entry in "${EFFECTS[@]}"; do
+    IFS=":" read -r name desc <<< "$entry"
+    printf "  %-18s %s\n" "$name" "$desc"
+  done
+}
+
+cmd_status() {
+  if [ -f "$BRANDING_FILE" ]; then
+    echo "Active screensaver: Custom branding"
+    echo "File: $BRANDING_FILE"
+    echo "--- Preview ---"
+    head -n 8 "$BRANDING_FILE"
+  else
+    echo "Active screensaver: Default Omarchy logo ($DEFAULT_LOGO)"
+  fi
+}
+
+# Subcommand dispatch
+case "${1:-help}" in
+  set)
+    shift
+    cmd_set "$@"
+    ;;
+  reset)
+    cmd_reset
+    ;;
+  test)
+    shift
+    cmd_test "$@"
+    ;;
+  run)
+    cmd_run
+    ;;
+  list)
+    cmd_list
+    ;;
+  status)
+    cmd_status
+    ;;
+  help|--help|-h)
+    show_help
+    ;;
+  *)
+    echo "Unknown command: $1" >&2
+    show_help >&2
+    exit 1
+    ;;
+esac

@@ -1,0 +1,16 @@
+{
+  "omasaver": {
+    "title": "Omasaver",
+    "description": "Personalized screensaver typography and animation effects manager for Omarchy",
+    "status": {
+      "custom": "Active: Custom Screensaver",
+      "default": "Active: Default Omarchy Logo"
+    },
+    "actions": {
+      "apply": "Apply",
+      "test": "Test Drive",
+      "reset": "Reset to Default",
+      "launch": "Launch Screensaver"
+    }
+  }
+}

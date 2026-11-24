@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "id": "nihal.omasaver",
+  "name": "Omasaver",
+  "version": "1.0.0",
+  "author": "Nihal",
+  "license": "MIT",
+  "description": "Personalized screensaver typography and animation effects manager for Omarchy.",
+  "kinds": [
+    "bar-widget"
+  ],
+  "entryPoints": {
+    "barWidget": "BarWidget.qml"
+  },
+  "barWidget": {
+    "displayName": "Omasaver",
+    "description": "Screensaver branding & animation customizer",
+    "category": "Look and feel",
+    "allowMultiple": false,
+    "defaultSection": "right"
+  }
+}
