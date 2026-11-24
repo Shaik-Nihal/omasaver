@@ -508,6 +508,12 @@ cmd_reset() {
     rm -f "$BRANDING_FILE"
     echo "✓ Removed custom branding; screensaver will use system default"
   fi
+
+  if command -v omarchy-notification-send >/dev/null 2>&1; then
+    omarchy-notification-send -g 󱄄 "Screensaver Reset" "Restored official Omarchy logo screensaver" 2>/dev/null || true
+  elif command -v notify-send >/dev/null 2>&1; then
+    notify-send -i screensaver -a "Omasaver" "Screensaver Reset" "Restored official Omarchy logo screensaver" 2>/dev/null || true
+  fi
 }
 
 cmd_test() {
@@ -529,24 +535,59 @@ cmd_test() {
     win_width=100
   fi
 
-  local foot_cfg_arg=""
-  if [ -f "/usr/share/omarchy/default/foot/screensaver.ini" ]; then
-    foot_cfg_arg="--config=/usr/share/omarchy/default/foot/screensaver.ini"
-  fi
-
   echo "Testing screensaver effect: '$effect' (matching default Omarchy font size 18 & 120 FPS)..."
 
-  local test_script="stty -echo 2>/dev/null; printf \"\\033]11;rgb:00/00/00\\007\"; printf \"\\033[?25l\"; cleanup() { printf \"\\033[?25h\"; exit 0; }; trap cleanup SIGINT SIGTERM EXIT; while true; do ttfx -i \"$target_file\" --frame-rate 120 --canvas-width 0 --canvas-height 0 --reuse-canvas --anchor-canvas c --anchor-text c $effect_flag --no-eol --no-restore-cursor & pid=\\$!; while kill -0 \\$pid 2>/dev/null; do if read -n1 -t 0.2; then kill \\$pid 2>/dev/null; cleanup; fi; done; done"
+  local runner="/tmp/omasaver-test-run.sh"
+  cat > "$runner" << 'RUNNER_EOF'
+#!/bin/bash
+TARGET="$1"
+EFFECT="$2"
+printf '\033]11;rgb:00/00/00\007'
+printf '\033[?25l'
+stty -echo 2>/dev/null
+cleanup() {
+  printf '\033[?25h'
+  stty echo 2>/dev/null
+  exit 0
+}
+trap cleanup SIGINT SIGTERM EXIT
+
+while true; do
+  if [ "$EFFECT" = "--random-effect" ]; then
+    ttfx -i "$TARGET" --frame-rate 120 --canvas-width 0 --canvas-height 0 --reuse-canvas --anchor-canvas c --anchor-text c --random-effect --no-eol --no-restore-cursor &
+  else
+    ttfx -i "$TARGET" --frame-rate 120 --canvas-width 0 --canvas-height 0 --reuse-canvas --anchor-canvas c --anchor-text c "$EFFECT" --no-eol --no-restore-cursor &
+  fi
+  PID=$!
+  while kill -0 $PID 2>/dev/null; do
+    if read -n1 -t 0.2; then
+      kill $PID 2>/dev/null
+      cleanup
+    fi
+  done
+done
+RUNNER_EOF
+  chmod +x "$runner"
+
+  local foot_cfg=""
+  if [ -f "/usr/share/omarchy/default/foot/screensaver.ini" ]; then
+    foot_cfg="--config=/usr/share/omarchy/default/foot/screensaver.ini"
+  fi
 
   if command -v hyprctl >/dev/null 2>&1 && [ -n "${HYPRLAND_INSTANCE_SIGNATURE:-}" ]; then
-    hyprctl dispatch "hl.dsp.exec_cmd('foot --app-id=TUI.float $foot_cfg_arg -W ${win_width}x26 bash -c \"'\"$test_script\"'\" ')" >/dev/null 2>&1 ||       bash -c "$test_script"
+    hyprctl dispatch "hl.dsp.exec_cmd([[foot --app-id=TUI.float $foot_cfg -W ${win_width}x26 $runner $target_file $effect_flag]])" >/dev/null 2>&1 || \
+      "$runner" "$target_file" "$effect_flag"
   else
-    bash -c "$test_script"
+    "$runner" "$target_file" "$effect_flag"
   fi
 }
 
 cmd_run() {
-  omarchy launch screensaver
+  if command -v omarchy-launch-screensaver >/dev/null 2>&1; then
+    omarchy-launch-screensaver force
+  else
+    omarchy launch screensaver
+  fi
 }
 
 cmd_list() {

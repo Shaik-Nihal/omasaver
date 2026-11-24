@@ -51,6 +51,8 @@ Panel {
   }
 
   function resetToDefault() {
+    root.inputText = "OMARCHY"
+    root.previewText = Model.generateAscii("OMARCHY")
     if (root.bar) {
       root.bar.run("omasaver reset")
       Qt.callLater(function() { brandingFile.reload() })
@@ -68,6 +70,7 @@ Panel {
   }
 
   function launchScreensaver() {
+    root.close()
     if (root.bar) {
       root.bar.run("omasaver run")
     }
