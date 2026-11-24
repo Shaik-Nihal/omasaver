@@ -37,7 +37,7 @@ show_help() {
 Omasaver - Custom Screensaver Branding & Effect Switcher for Omarchy
 
 Usage:
-  omasaver set "<text>"    Generate and set custom screensaver text
+  omasaver set "<text>"    Generate and set custom screensaver in official Omarchy font
   omasaver reset           Revert to official Omarchy logo
   omasaver test [effect]   Preview effect in floating terminal (default: matrix)
   omasaver run             Launch full-screen screensaver immediately
@@ -62,68 +62,51 @@ cmd_set() {
 
   mkdir -p "$BRANDING_DIR"
 
+  # Use system omarchy-ascii (Delta Corps Priest 1 font) if available
+  if command -v omarchy-ascii >/dev/null 2>&1; then
+    if omarchy-ascii "$text" > "$BRANDING_FILE" 2>/dev/null && [ -s "$BRANDING_FILE" ]; then
+      echo "✓ Generated Omarchy signature screensaver text for '$text'"
+      echo "✓ Saved to $BRANDING_FILE"
+      return 0
+    fi
+  fi
+
+  # Fallback generator with official Delta Corps Priest 1 font
   python3 - "$text" "$BRANDING_FILE" << 'PYEOF'
 import sys
 
 text = sys.argv[1].upper()
 out_file = sys.argv[2]
 
-GLYPHS = {
-  "A": [" ▄███████ ", "███   ███ ", "███   ███ ", "███▄▄▄███ ", "███▀▀▀███ ", "███   ███ ", "███   ███ ", "███   █▀  "],
-  "B": ["████████▄ ", "███   ███ ", "███   ███ ", "████████▄ ", "███▀▀▀███ ", "███   ███ ", "███   ███ ", "████████▀ "],
-  "C": [" ▄███████ ", "███   ███ ", "███   █▀  ", "███       ", "███       ", "███   █▄  ", "███   ███ ", " ▀██████▀ "],
-  "D": ["████████▄ ", "███   ███ ", "███   ███ ", "███   ███ ", "███   ███ ", "███   ███ ", "███   ███ ", "████████▀ "],
-  "E": ["█████████ ", "███       ", "███       ", "█████████ ", "███▀▀▀▀▀▀ ", "███       ", "███       ", "█████████ "],
-  "F": ["█████████ ", "███       ", "███       ", "█████████ ", "███▀▀▀▀▀▀ ", "███       ", "███       ", "███       "],
-  "G": [" ▄███████ ", "███   ███ ", "███   █▀  ", "███  ▄▄▄▄ ", "███  ▀███ ", "███   ███ ", "███   ███ ", " ▀██████▀ "],
-  "H": [" ▄█   █▄  ", "███   ███ ", "███   ███ ", "███▄▄▄███ ", "███▀▀▀███ ", "███   ███ ", "███   ███ ", " ▀█   █▀  "],
-  "I": ["███████ ", "▀▀███▀▀ ", "  ███   ", "  ███   ", "  ███   ", "  ███   ", "▄▄███▄▄ ", "███████ "],
-  "J": ["   ▄███ ", "    ███ ", "    ███ ", "    ███ ", "    ███ ", "███ ███ ", "███████ ", " ▀████▀ "],
-  "K": ["███   ▄█ ", "███  ▄█▀ ", "███ ▄█▀  ", "█████▀   ", "███ ██▄  ", "███  ▀██▄", "███   ███", "███   █▀ "],
-  "L": ["▄█       ", "███      ", "███      ", "███      ", "███      ", "███   ▄█ ", "███▄▄▄██ ", "▀██████▀ "],
-  "M": [" ▄█     █▄", "████   ███", "█████ ▄███", "███ █▄█ ██", "███  ▀  ██", "███     ██", "███     ██", " ▀█     █▀"],
-  "N": [" ▄█   █▄  ", "███   ███ ", "████  ███ ", "█████ ███ ", "███ █████ ", "███  ████ ", "███   ███ ", " ▀█   █▀  "],
-  "O": [" ▄███████▄", "███     ██", "███     ██", "███     ██", "███     ██", "███     ██", "███     ██", " ▀███████▀"],
-  "P": ["████████▄ ", "███   ███ ", "███   ███ ", "████████▀ ", "███▀▀▀▀   ", "███       ", "███       ", "███       "],
-  "Q": [" ▄███████▄", "███     ██", "███     ██", "███     ██", "███     ██", "███  █▄ ██", "███  ▀████", " ▀███████▀"],
-  "R": ["████████▄ ", "███   ███ ", "███   ███ ", "████████▄ ", "███▀▀▀███ ", "███   ███ ", "███   ███ ", "███   █▀  "],
-  "S": [" ▄███████ ", "███   ███ ", "███   █▀  ", " ▀█████▄  ", "   ▀▀███▄ ", "▄█    ███ ", "███   ███ ", " ▀██████▀ "],
-  "T": ["█████████ ", "▀▀▀███▀▀▀ ", "   ███    ", "   ███    ", "   ███    ", "   ███    ", "   ███    ", "   ███    "],
-  "U": [" ▄█   █▄  ", "███   ███ ", "███   ███ ", "███   ███ ", "███   ███ ", "███   ███ ", "███   ███ ", " ▀█████▀  "],
-  "V": [" ▄█   █▄  ", "███   ███ ", "███   ███ ", "███   ███ ", "███   ███ ", "▀███▄███▀ ", "  █████   ", "   ▀█▀    "],
-  "W": [" ▄█     █▄", "███     ██", "███     ██", "███  █  ██", "███ █▄█ ██", "█████ ▀███", "████   ███", " ▀█     █▀"],
-  "X": [" ▄█   █▄  ", "███   ███ ", " ▀██▄██▀  ", "   ███    ", "   ███    ", " ▄██▀██▄  ", "███   ███ ", " ▀█   █▀  "],
-  "Y": [" ▄█   █▄  ", "███   ███ ", "███   ███ ", " ▀█████▀  ", "   ███    ", "   ███    ", "   ███    ", "   ███    "],
-  "Z": ["█████████ ", "▀▀▀▀▀███▀ ", "   ▄██▀   ", "  ███     ", " ▄██▀     ", "███       ", "█████████ ", "▀▀▀▀▀▀▀▀▀ "],
-  "0": [" ▄███████▄", "███     ██", "███ ▄█▄ ██", "███ █▀█ ██", "███     ██", "███     ██", " ▀███████▀", "          "],
-  "1": ["  ▄███  ", " ▄████  ", "   ███  ", "   ███  ", "   ███  ", "   ███  ", " ▄▄███▄▄", " ███████"],
-  "2": [" ▄███████ ", "███   ███ ", "      ███ ", " ▄██████▀ ", "███▀▀▀▀   ", "███       ", "█████████ ", "▀▀▀▀▀▀▀▀▀ "],
-  "3": [" ▄███████ ", "███   ███ ", "      ███ ", "  ▄█████▀ ", "    ▀▀███ ", "███   ███ ", "███   ███ ", " ▀██████▀ "],
-  "4": ["███   ███ ", "███   ███ ", "███   ███ ", "█████████ ", "▀▀▀▀▀▀███ ", "      ███ ", "      ███ ", "      ▀█▀ "],
-  "5": ["█████████ ", "███       ", "████████▄ ", "▀▀▀▀▀▀███ ", "      ███ ", "███   ███ ", "███   ███ ", " ▀██████▀ "],
-  "6": [" ▄███████ ", "███   ███ ", "███       ", "████████▄ ", "███▀▀▀███ ", "███   ███ ", "███   ███ ", " ▀██████▀ "],
-  "7": ["█████████ ", "▀▀▀▀▀▀███ ", "     ███  ", "    ███   ", "   ███    ", "   ███    ", "   ███    ", "   ▀█▀    "],
-  "8": [" ▄███████ ", "███   ███ ", "███   ███ ", " ▀██████▄ ", " ▄██████▀ ", "███   ███ ", "███   ███ ", " ▀██████▀ "],
-  "9": [" ▄███████ ", "███   ███ ", "███   ███ ", " ▀███████ ", "      ███ ", "      ███ ", "███   ███ ", " ▀██████▀ "],
-  " ": ["      ", "      ", "      ", "      ", "      ", "      ", "      ", "      "],
-  "-": ["       ", "       ", "       ", "███████", "▀▀▀▀▀▀▀", "       ", "       ", "       "],
-  "!": [" ███ ", " ███ ", " ███ ", " ███ ", " ███ ", "  ▀  ", " ███ ", " ▀█▀ "],
-  ".": ["     ", "     ", "     ", "     ", "     ", "     ", "████ ", "▀██▀ "]
-}
+# Load from Model.js if available
+import os, json, re
+model_path = os.path.expanduser("~/.config/omarchy/plugins/nihal.omasaver/Model.js")
+if not os.path.exists(model_path):
+    model_path = "/home/nihal/.gemini/antigravity/scratch/omasaver/Model.js"
 
-sep = "   " # 3 spaces uniform kerning
-lines = ["" for _ in range(8)]
+glyphs = {}
+if os.path.exists(model_path):
+    with open(model_path, "r", encoding="utf-8") as f:
+        m = re.search(r"var GLYPHS = (\{.*?\});", f.read(), re.DOTALL)
+        if m:
+            glyphs = json.loads(m.group(1))
 
-for char in text:
-    glyph = GLYPHS.get(char, GLYPHS[" "])
-    for row in range(8):
-        lines[row] += (sep if lines[row] else "") + glyph[row]
+sep = "   "
+lines = [""] * 9
 
-with open(out_file, "w") as f:
+for ch in text:
+    g = glyphs.get(ch, glyphs.get(" ", ["    "] * 9))
+    for r in range(min(9, len(g))):
+        lines[r] += (sep if lines[r] else "") + g[r]
+
+while lines and not lines[-1].strip():
+    lines.pop()
+
+with open(out_file, "w", encoding="utf-8") as f:
     for line in lines:
         f.write(line.rstrip() + "\n")
 
-print(f"✓ Generated Omarchy block screensaver text for '{text}'")
+print(f"✓ Generated Omarchy signature screensaver text for '{text}'")
 print(f"✓ Saved to {out_file}")
 PYEOF
 }
@@ -147,11 +130,13 @@ cmd_test() {
   fi
 
   echo "Testing screensaver effect: '$effect'..."
+  local ttfx_cmd="ttfx -i \"$target_file\" --frame-rate 120 --canvas-width 0 --canvas-height 0 --reuse-canvas --anchor-canvas c --anchor-text c $effect"
+
   if command -v hyprctl >/dev/null 2>&1 && [ -n "${HYPRLAND_INSTANCE_SIGNATURE:-}" ]; then
-    hyprctl dispatch "hl.dsp.exec_cmd('foot --app-id=TUI.float bash -c \"ttfx -i \\\"$target_file\\\" $effect ; sleep 4\"')" >/dev/null 2>&1 || \
-      ttfx -i "$target_file" "$effect"
+    hyprctl dispatch "hl.dsp.exec_cmd('foot --app-id=TUI.float bash -c \"$ttfx_cmd ; sleep 3\"')" >/dev/null 2>&1 || \
+      eval "$ttfx_cmd"
   else
-    ttfx -i "$target_file" "$effect"
+    eval "$ttfx_cmd"
   fi
 }
 
@@ -177,7 +162,7 @@ cmd_status() {
     echo "Active screensaver: Custom branding"
     echo "File: $BRANDING_FILE"
     echo "--- Preview ---"
-    head -n 8 "$BRANDING_FILE"
+    head -n 9 "$BRANDING_FILE"
   else
     echo "Active screensaver: Default Omarchy logo ($DEFAULT_LOGO)"
   fi
