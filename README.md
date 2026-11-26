@@ -20,8 +20,9 @@
 - [Screenshots](#screenshots)
 - [Prerequisites](#prerequisites)
 - [Installation](#installation)
-  - [Quick Install (Recommended)](#quick-install-recommended)
-  - [Manual Install](#manual-install)
+  - [One-Command Install (Recommended)](#one-command-install-recommended)
+  - [Via Omarchy Plugin Store UI](#via-omarchy-plugin-store-ui)
+  - [Manual / Local Install](#manual--local-install)
 - [Uninstallation](#uninstallation)
 - [Usage](#usage)
   - [Shell Bar Panel (GUI)](#shell-bar-panel-gui)
@@ -109,19 +110,25 @@ Once listed in the Omarchy Community Catalog, you can also install it directly w
 
 ---
 
-### Manual / Git Clone
+### Manual / Local Install
 
-If you prefer to clone manually from GitHub:
+If installing from a downloaded copy of this repository instead of `omarchy plugin add`:
 
 ```bash
-# 1. Clone into your Omarchy plugins directory
-git clone https://github.com/Shaik-Nihal/omasaver.git ~/.config/omarchy/plugins/nihal.omasaver
+# 1. Copy the plugin folder into your Omarchy plugins directory
+cp -r /path/to/omasaver ~/.config/omarchy/plugins/nihal.omasaver
 
 # 2. Reload the Omarchy shell to activate the plugin
 /usr/share/omarchy/bin/omarchy-restart-shell
 ```
 
-The plugin will automatically detect its directory and symlink `bin/omasaver` to `~/.local/bin/omasaver` on first run. If you wish to manually link it yourself:
+To update an existing installation added via `omarchy plugin add`:
+
+```bash
+omarchy plugin update nihal.omasaver
+```
+
+The plugin automatically detects its directory and symlinks `bin/omasaver` to `~/.local/bin/omasaver` on first run. If you wish to manually link it yourself:
 
 ```bash
 mkdir -p ~/.local/bin
